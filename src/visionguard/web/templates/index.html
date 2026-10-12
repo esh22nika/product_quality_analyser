@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisionGuard — Industrial Anomaly Inspection</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; font-family: 'Segoe UI', system-ui, sans-serif; }
+        .card { background-color: #1e293b; border: 1px solid #334155; border-radius: 12px; }
+        .nav-tabs .nav-link { color: #94a3b8; border: none; font-weight: 500; }
+        .nav-tabs .nav-link.active { background-color: #3b82f6; color: #ffffff; border-radius: 8px 8px 0 0; }
+        .badge-normal { background-color: #10b981; }
+        .badge-review { background-color: #f59e0b; color: #1e293b; }
+        .badge-anomalous { background-color: #ef4444; }
+        .img-result { max-width: 100%; border-radius: 8px; border: 1px solid #475569; }
+        .metric-card { background-color: #334155; padding: 15px; border-radius: 8px; text-align: center; }
+        .metric-val { font-size: 1.5rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <!-- Header -->
+        <header class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary">
+            <div>
+                <h1 class="h2 mb-0 text-primary"><i class="bi bi-shield-check"></i> VisionGuard</h1>
+                <small class="text-secondary">Robust Image & Video-Based Industrial Defect Detection</small>
+            </div>
+            <div>
+                <span class="badge bg-dark border border-secondary px-3 py-2">
+                    <i class="bi bi-cpu"></i> Hardware: <span id="hw-status">{{ device }}</span>
+                </span>
+                <span class="badge bg-primary px-3 py-2 ms-2">
+                    <i class="bi bi-diagram-3"></i> Anomalib 2.7.0
+                </span>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-tabs mb-4" id="vgTabs" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" id="image-tab" data-bs-toggle="tab" data-bs-target="#image-pane" type="button">
+                    <i class="bi bi-image"></i> Image Inspection
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="batch-tab" data-bs-toggle="tab" data-bs-target="#batch-pane" type="button">
+                    <i class="bi bi-collection"></i> Batch Inspection
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="dataset-tab" data-bs-toggle="tab" data-bs-target="#dataset-pane" type="button">
+                    <i class="bi bi-folder2-open"></i> Dataset Explorer
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history-pane" type="button">
+                    <i class="bi bi-clock-history"></i> Inspection History
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="vgTabsContent">
+            <!-- Image Inspection Pane -->
+            <div class="tab-pane fade show active" id="image-pane" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card p-3 mb-3">
+                            <h5 class="card-title text-info"><i class="bi bi-sliders"></i> Configuration</h5>
+                            <form id="inspect-form">
+                                <div class="mb-3">
+                                    <label class="form-label">Product Category</label>
+                                    <select class="form-select bg-dark text-white border-secondary" id="category">
+                                        <option value="bottle">bottle</option>
+                                        <option value="cable">cable</option>
+                                        <option value="capsule">capsule</option>
+                                        <option value="hazelnut">hazelnut</option>
+                                        <option value="metal_nut">metal_nut</option>
+                                        <option value="screw">screw</option>
+                                        <option value="carpet">carpet</option>
+                                        <option value="leather">leather</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Model Architecture</label>
+                                    <select class="form-select bg-dark text-white border-secondary" id="model_name">
+                                        <option value="patchcore">PatchCore</option>
+                                        <option value="efficientad">EfficientAD</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Decision Threshold: <span id="thresh-val">0.50</span></label>
+                                    <input type="range" class="form-range" id="threshold" min="0" max="1" step="0.01" value="0.5" oninput="document.getElementById('thresh-val').innerText=this.value">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Upload Product Image</label>
+                                    <input class="form-control bg-dark text-white border-secondary" type="file" id="image-file" accept="image/*" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100" id="btn-inspect">
+                                    <i class="bi bi-search"></i> Inspect Image
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="col-md-8">
+                        <div class="card p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="card-title mb-0 text-info"><i class="bi bi-activity"></i> Inspection Results</h5>
+                                <span class="badge px-3 py-2 fs-6" id="badge-decision">Awaiting Input</span>
+                            </div>
+
+                            <div class="row g-2 mb-3">
+                                <div class="col-md-4">
+                                    <div class="metric-card">
+                                        <small class="text-secondary">Anomaly Score</small>
+                                        <div class="metric-val text-warning" id="res-score">0.000</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="metric-card">
+                                        <small class="text-secondary">Latency</small>
+                                        <div class="metric-val text-info" id="res-latency">0 ms</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="metric-card">
+                                        <small class="text-secondary">Est. Anomalous Area</small>
+                                        <div class="metric-val text-danger" id="res-area">0.0%</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-6 text-center">
+                                    <label class="form-label text-secondary">Original Image</label>
+                                    <img id="img-orig" class="img-result d-none" alt="Original">
+                                </div>
+                                <div class="col-md-6 text-center">
+                                    <label class="form-label text-secondary">Anomaly Heatmap</label>
+                                    <img id="img-heatmap" class="img-result d-none" alt="Heatmap">
+                                </div>
+                                <div class="col-md-6 text-center">
+                                    <label class="form-label text-secondary">Overlay Localization</label>
+                                    <img id="img-overlay" class="img-result d-none" alt="Overlay">
+                                </div>
+                                <div class="col-md-6 text-center">
+                                    <label class="form-label text-secondary">Thresholded Mask</label>
+                                    <img id="img-mask" class="img-result d-none" alt="Mask">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Batch Pane -->
+            <div class="tab-pane fade" id="batch-pane" role="tabpanel">
+                <div class="card p-3">
+                    <h5 class="text-info"><i class="bi bi-collection"></i> Multi-Image Batch Pipeline</h5>
+                    <p class="text-secondary">Upload multiple product images to run parallel evaluation with fault tolerance.</p>
+                    <form id="batch-form" class="mb-3">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <input class="form-control bg-dark text-white border-secondary" type="file" id="batch-files" multiple accept="image/*" required>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select bg-dark text-white border-secondary" id="batch-cat">
+                                    <option value="bottle">bottle</option>
+                                    <option value="cable">cable</option>
+                                    <option value="metal_nut">metal_nut</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <button type="submit" class="btn btn-primary w-100">Process Batch</button>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="batch-results-area" class="d-none">
+                        <h6>Results Summary</h6>
+                        <table class="table table-dark table-striped table-hover" id="batch-table">
+                            <thead>
+                                <tr>
+                                    <th>Filename</th>
+                                    <th>Status</th>
+                                    <th>Score</th>
+                                    <th>Decision</th>
+                                    <th>Latency</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dataset Explorer Pane -->
+            <div class="tab-pane fade" id="dataset-pane" role="tabpanel">
+                <div class="card p-3">
+                    <h5 class="text-info"><i class="bi bi-folder"></i> Local Benchmark Datasets</h5>
+                    <p class="text-secondary">Scan local MVTec AD / VisA dataset directories to verify training and testing sets.</p>
+                    <button class="btn btn-outline-info w-25 mb-3" onclick="loadDatasetInfo()">Scan Datasets</button>
+                    <div id="dataset-info-box">
+                        <div class="alert alert-secondary">Click 'Scan Datasets' to inspect datasets directory.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Pane -->
+            <div class="tab-pane fade" id="history-pane" role="tabpanel">
+                <div class="card p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="text-info mb-0"><i class="bi bi-clock-history"></i> SQLite Inspection History</h5>
+                        <button class="btn btn-sm btn-outline-primary" onclick="loadHistory()">Refresh Log</button>
+                    </div>
+                    <table class="table table-dark table-striped" id="history-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Timestamp</th>
+                                <th>Category</th>
+                                <th>Model</th>
+                                <th>Score</th>
+                                <th>Decision</th>
+                                <th>Inspector Review</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('inspect-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-inspect');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Analyzing...';
+
+            const formData = new FormData();
+            formData.append('image', document.getElementById('image-file').files[0]);
+            formData.append('category', document.getElementById('category').value);
+            formData.append('model_name', document.getElementById('model_name').value);
+            formData.append('threshold', document.getElementById('threshold').value);
+
+            try {
+                const res = await fetch('/api/inspect', { method: 'POST', body: formData });
+                const data = await res.json();
+                
+                if (data.success) {
+                    const badge = document.getElementById('badge-decision');
+                    badge.innerText = data.predicted_label;
+                    badge.className = 'badge px-3 py-2 fs-6 ' + 
+                        (data.predicted_label === 'LIKELY_NORMAL' ? 'badge-normal' :
+                        (data.predicted_label === 'LIKELY_ANOMALOUS' ? 'badge-anomalous' : 'badge-review'));
+
+                    document.getElementById('res-score').innerText = data.image_score.toFixed(3);
+                    document.getElementById('res-latency').innerText = data.inference_ms.toFixed(1) + ' ms';
+                    document.getElementById('res-area').innerText = data.region_analysis.estimated_anomalous_area_percent.toFixed(2) + '%';
+
+                    const showImg = (id, base64) => {
+                        const img = document.getElementById(id);
+                        img.src = 'data:image/png;base64,' + base64;
+                        img.classList.remove('d-none');
+                    };
+                    showImg('img-orig', data.images.original);
+                    showImg('img-heatmap', data.images.heatmap);
+                    showImg('img-overlay', data.images.overlay);
+                    showImg('img-mask', data.images.mask);
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (err) {
+                alert('Inspection error: ' + err);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-search"></i> Inspect Image';
+            }
+        });
+
+        async function loadDatasetInfo() {
+            const res = await fetch('/api/datasets');
+            const data = await res.json();
+            const box = document.getElementById('dataset-info-box');
+            if (data.valid) {
+                let html = '<div class="alert alert-success">Datasets found: ' + data.total_categories + ' categories</div>';
+                box.innerHTML = html;
+            } else {
+                box.innerHTML = '<div class="alert alert-warning">' + (data.error || 'No datasets placed yet') + '</div>';
+            }
+        }
+
+        async function loadHistory() {
+            const res = await fetch('/api/history');
+            const data = await res.json();
+            const tbody = document.querySelector('#history-table tbody');
+            tbody.innerHTML = '';
+            data.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${r.inspection_id}</td><td>${r.timestamp}</td><td>${r.category}</td><td>${r.model_name}</td><td>${r.image_score}</td><td>${r.decision_status}</td><td>${r.review_label}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+video:
+  sampling_interval: 2        # Process every Nth frame
+  max_duration_seconds: 60    # Limit upload duration to prevent OOM
+  max_dimension: 720          # Max width/height during inference
+  aggregation:
+    consecutive_frames: 3     # Min frames to trigger an alert event
+    score_threshold: 0.5      # Frame anomaly threshold
+    merge_gap_frames: 5       # Max gap between suspicious frames to merge
+    min_event_duration_s: 0.2 # Min event duration

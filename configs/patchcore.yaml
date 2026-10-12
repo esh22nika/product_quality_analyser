@@ -1,0 +1,13 @@
+model:
+  name: "patchcore"
+  backbone: "wide_resnet50_2"
+  layers:
+    - "layer2"
+    - "layer3"
+  coreset_sampling_ratio: 0.1
+  num_neighbors: 9
+
+train:
+  max_epochs: 1
+  accelerator: "auto"
+  devices: 1

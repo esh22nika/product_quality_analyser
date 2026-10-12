@@ -1,0 +1,40 @@
+data:
+  root: "./datasets"
+  dataset: "mvtec_ad"
+  categories:
+    - "bottle"
+    - "cable"
+    - "capsule"
+    - "hazelnut"
+    - "metal_nut"
+    - "screw"
+    - "carpet"
+    - "leather"
+  image_size: [256, 256]
+  batch_size: 8
+  num_workers: 0
+
+model:
+  name: "patchcore"
+  backbone: "wide_resnet50_2"
+  layers:
+    - "layer2"
+    - "layer3"
+  coreset_sampling_ratio: 0.1
+  threshold: 0.5
+  review_threshold_low: 0.35
+  review_threshold_high: 0.65
+  pixel_threshold: 0.5
+  min_region_area: 50
+
+device:
+  preference: "auto"  # "auto", "cuda", "cpu"
+
+storage:
+  artifacts_dir: "./artifacts"
+  checkpoints_dir: "./checkpoints"
+  reports_dir: "./reports"
+  db_path: "./artifacts/visionguard.db"
+
+logging:
+  level: "INFO"
