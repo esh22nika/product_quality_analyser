@@ -49,7 +49,8 @@ class BatchInspectionPipeline:
                         "quality_warning": "; ".join(out["quality"]["warnings"]) if out["quality"]["warnings"] else "None",
                         "error": None
                     }
-                    detailed_records.append(out)
+                    if len(detailed_records) < 10:
+                        detailed_records.append(out)
                 else:
                     record = {
                         "filename": p.name,
@@ -78,7 +79,7 @@ class BatchInspectionPipeline:
 
             results.append(record)
 
-        df = pd.DataFrame(results)
+        df = pd.DataFrame(results, columns=["filename", "status", "predicted_label", "image_score", "suspicious_area_pct", "num_regions", "inference_ms", "quality_warning", "error"])
 
         summary = {
             "total_images": len(results),
@@ -86,7 +87,7 @@ class BatchInspectionPipeline:
             "review_count": int((df["predicted_label"] == "REVIEW_REQUIRED").sum()),
             "anomalous_count": int((df["predicted_label"] == "LIKELY_ANOMALOUS").sum()),
             "failed_count": int((df["status"] == "FAILED").sum()),
-            "avg_inference_ms": float(df[df["status"] == "SUCCESS"]["inference_ms"].mean()) if not df.empty else 0.0
+            "avg_inference_ms": float(df[df["status"] == "SUCCESS"]["inference_ms"].mean()) if (df["status"] == "SUCCESS").any() else 0.0
         }
 
         return {

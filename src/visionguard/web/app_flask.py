@@ -1,8 +1,13 @@
 import base64
 import io
 import os
+import sys
 import uuid
 from pathlib import Path
+
+# Automatically ensure src/ is on sys.path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+
 from flask import Flask, render_template, request, jsonify
 import cv2
 import numpy as np
@@ -90,7 +95,14 @@ def create_flask_app():
 
     @app.route("/api/datasets")
     def datasets():
-        res = DatasetValidator.validate_mvtec_ad("./datasets/mvtec_ad")
+        mvtec_root = "./datasets/mvtec_ad" if Path("./datasets/mvtec_ad").exists() else "./mvtec_anomaly_detection"
+        res = DatasetValidator.validate_mvtec_ad(mvtec_root)
+        visa_p = Path("./datasets/visa")
+        if visa_p.exists():
+            visa_cats = [d.name for d in visa_p.iterdir() if d.is_dir() and d.name != "split_csv"]
+            res["visa_categories"] = visa_cats
+            res["total_categories"] = res.get("total_categories", 0) + len(visa_cats)
+            res["valid"] = True
         return jsonify(res)
 
     @app.route("/api/history")

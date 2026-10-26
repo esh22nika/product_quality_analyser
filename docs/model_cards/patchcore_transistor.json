@@ -1,0 +1,20 @@
+{
+  "architecture": "patchcore",
+  "category": "transistor",
+  "intended_use": "Category-specific industrial visual anomaly inspection",
+  "checkpoint": "checkpoints\\patchcore_transistor.pt",
+  "checkpoint_sha256": "debe31d5f2a29454309ce7db92522475a74be7583ef573af2e94111c1a7bde9f",
+  "provenance": {
+    "source": "existing local checkpoint",
+    "training_seed": null,
+    "original_training_protocol": "not recorded in this checkpoint"
+  },
+  "preprocessing": "Checkpoint model-specific resize (256x256) and normalization; EfficientAD normalization is internal.",
+  "score_semantics": "Raw scores for ranking; checkpoint-calibrated scores for fixed-threshold decisions; not probabilities.",
+  "local_evaluations": [],
+  "limitations": [
+    "No claim of transfer to unrelated conveyor footage.",
+    "Unknown/third-party training and validation selection prevents claims of a matched-training benchmark.",
+    "No real-video defect accuracy has been established for this model."
+  ]
+}

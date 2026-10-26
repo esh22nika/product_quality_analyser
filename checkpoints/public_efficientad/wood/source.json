@@ -1,0 +1,9 @@
+{
+  "category": "wood",
+  "repo": "micguida1/mvtec-anomaly-checkpoints",
+  "revision": "a0d5049619c09cdd06e0fb22f82c906b53355d2f",
+  "filename": "EfficientAd/MVTecAD/wood/latest/weights/lightning/model.ckpt",
+  "bytes": 75199925,
+  "sha256": "0fae7486dd3ee589051813264b3ab481ef48a1abdad17fe0cf86dd75818902b6",
+  "url": "https://huggingface.co/micguida1/mvtec-anomaly-checkpoints/resolve/a0d5049619c09cdd06e0fb22f82c906b53355d2f/EfficientAd/MVTecAD/wood/latest/weights/lightning/model.ckpt"
+}

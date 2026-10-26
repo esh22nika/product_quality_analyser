@@ -26,18 +26,33 @@ class ModelManager:
         """Retrieves or creates a cached model instance and loads checkpoint if available."""
         key = f"{model_name.lower()}_{category or 'default'}"
         if key not in cls._instances:
-            model_cls = ModelRegistry.get(model_name)
-            instance = model_cls(device=device)
-
+            ckpt_path = None
             if category:
-                ckpt_path = Path(checkpoint_dir) / f"{model_name.lower()}_{category}.pt"
-                if ckpt_path.exists():
-                    try:
-                        instance.load(str(ckpt_path))
-                        logger.info(f"Loaded existing checkpoint from {ckpt_path}")
-                    except Exception as e:
-                        logger.warning(f"Could not load checkpoint {ckpt_path}: {e}")
+                base = Path(checkpoint_dir)
+                candidates = [base / f"{model_name.lower()}_{category}.pt"]
+                if model_name.lower() == "efficientad":
+                    candidates.append(base / "public_efficientad" / category / "model.ckpt")
+                ckpt_path = next((p for p in candidates if p.is_file()), None)
+                if ckpt_path is None:
+                    raise FileNotFoundError(
+                        f"No trained {model_name} checkpoint for '{category}' in {base.resolve()}. "
+                        "Add trained category weights before running inspection."
+                    )
+            model_cls = ModelRegistry.get(model_name)
+            kwargs = {"device": device}
+            if model_name.lower() == "patchcore" and ckpt_path is not None:
+                # The saved category state already contains the feature extractor.
+                # Avoid network requests for an unused initial backbone checkpoint.
+                kwargs["pre_trained"] = False
+            instance = model_cls(**kwargs)
 
+            if ckpt_path is not None:
+                instance.load(str(ckpt_path))
+                logger.info(f"Loaded existing checkpoint from {ckpt_path}")
+
+            # Keep memory bounded while users switch between benchmark categories.
+            if len(cls._instances) >= 2:
+                cls._instances.pop(next(iter(cls._instances)))
             cls._instances[key] = instance
         return cls._instances[key]
 

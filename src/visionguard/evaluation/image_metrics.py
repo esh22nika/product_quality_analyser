@@ -14,11 +14,16 @@ class ImageMetricsCalculator:
     def calculate(
         y_true: List[int] | np.ndarray,
         y_scores: List[float] | np.ndarray,
-        threshold: float = 0.5
+        threshold: float = 0.5,
+        decision_scores=None,
     ) -> Dict[str, Any]:
         """Calculates image-level metrics."""
         y_true = np.array(y_true, dtype=int)
         y_scores = np.array(y_scores, dtype=float)
+        if not len(y_true) or len(y_true) != len(y_scores) or not np.isfinite(y_scores).all():
+            raise ValueError("Labels and finite scores must be nonempty and aligned.")
+        if not np.isin(y_true, [0, 1]).all():
+            raise ValueError("Ground truth must be binary 0/1.")
 
         if len(np.unique(y_true)) < 2:
             return {
@@ -30,7 +35,10 @@ class ImageMetricsCalculator:
         auroc = float(roc_auc_score(y_true, y_scores))
         ap = float(average_precision_score(y_true, y_scores))
 
-        y_pred = (y_scores >= threshold).astype(int)
+        decisions = y_scores if decision_scores is None else np.asarray(decision_scores, dtype=float)
+        if decisions.shape != y_scores.shape or not np.isfinite(decisions).all():
+            raise ValueError("Decision scores must be finite and aligned with ranking scores.")
+        y_pred = (decisions >= threshold).astype(int)
         precision, recall, f1, _ = precision_recall_fscore_support(
             y_true, y_pred, average="binary", zero_division=0
         )

@@ -31,7 +31,8 @@ def create_app() -> gr.Blocks:
                 gr.Markdown(f"""
                 **Hardware Status:** `{device_name}`  
                 **Engine:** `Anomalib + PyTorch`  
-                **Active Models:** `PatchCore & EfficientAD`
+                **Available architectures:** `PatchCore & EfficientAD`
+                **Weights:** loaded on demand after a category is selected
                 """)
 
         # Tabs

@@ -1,0 +1,20 @@
+{
+  "architecture": "patchcore",
+  "category": "capsules",
+  "intended_use": "Category-specific industrial visual anomaly inspection",
+  "checkpoint": "checkpoints\\patchcore_capsules.pt",
+  "checkpoint_sha256": "acd2785fc116840e5e8de30c10469da7f47f1c306db4e9c9118fbe1b510e6ddb",
+  "provenance": {
+    "source": "existing local checkpoint",
+    "training_seed": null,
+    "original_training_protocol": "not recorded in this checkpoint"
+  },
+  "preprocessing": "Checkpoint model-specific resize (256x256) and normalization; EfficientAD normalization is internal.",
+  "score_semantics": "Raw scores for ranking; checkpoint-calibrated scores for fixed-threshold decisions; not probabilities.",
+  "local_evaluations": [],
+  "limitations": [
+    "No claim of transfer to unrelated conveyor footage.",
+    "Unknown/third-party training and validation selection prevents claims of a matched-training benchmark.",
+    "No real-video defect accuracy has been established for this model."
+  ]
+}

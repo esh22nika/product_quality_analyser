@@ -1,0 +1,9 @@
+{
+  "category": "metal_nut",
+  "repo": "micguida1/mvtec-anomaly-checkpoints",
+  "revision": "a0d5049619c09cdd06e0fb22f82c906b53355d2f",
+  "filename": "EfficientAd/MVTecAD/metal_nut/latest/weights/lightning/model.ckpt",
+  "bytes": 75199989,
+  "sha256": "244fc3358a43ca94cfbf793ea7b456c0020169f72e974af27d1a8cd630ef4028",
+  "url": "https://huggingface.co/micguida1/mvtec-anomaly-checkpoints/resolve/a0d5049619c09cdd06e0fb22f82c906b53355d2f/EfficientAd/MVTecAD/metal_nut/latest/weights/lightning/model.ckpt"
+}

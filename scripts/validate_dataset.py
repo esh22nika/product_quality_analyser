@@ -15,7 +15,7 @@ def main():
     args = parser.parse_args()
 
     print(f"Validating dataset '{args.dataset}' at path: {args.root}...")
-    res = DatasetValidator.validate_mvtec_ad(args.root)
+    res = (DatasetValidator.validate_visa(args.root) if args.dataset == "visa" else DatasetValidator.validate_mvtec_ad(args.root))
 
     print("\n--- Validation Results ---")
     print(f"Dataset root exists: {res['valid']}")

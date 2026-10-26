@@ -1,0 +1,9 @@
+{
+  "category": "cable",
+  "repo": "micguida1/mvtec-anomaly-checkpoints",
+  "revision": "a0d5049619c09cdd06e0fb22f82c906b53355d2f",
+  "filename": "EfficientAd/MVTecAD/cable/latest/weights/lightning/model.ckpt",
+  "bytes": 75199925,
+  "sha256": "7e2ca303af4478cf9584f99c769647d99e14d25c6d7f6461f64410d3416e22d6",
+  "url": "https://huggingface.co/micguida1/mvtec-anomaly-checkpoints/resolve/a0d5049619c09cdd06e0fb22f82c906b53355d2f/EfficientAd/MVTecAD/cable/latest/weights/lightning/model.ckpt"
+}

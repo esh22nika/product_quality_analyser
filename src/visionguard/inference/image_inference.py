@@ -42,11 +42,11 @@ class ImageInspectionPipeline:
         quality_result = self.quality_checker.check_quality(rgb_np)
 
         # 3. Model inference
-        model = ModelManager.get_model(
-            model_name=self.model_name,
-            category=self.category,
-            device=self.device
-        )
+        try:
+            model = ModelManager.get_model(
+                model_name=self.model_name, category=self.category, device=self.device)
+        except Exception as exc:
+            return {"success": False, "error": str(exc), "quality": quality_result}
         
         # Override threshold if supplied
         model.threshold = decision_threshold
@@ -74,6 +74,9 @@ class ImageInspectionPipeline:
             "success": True,
             "original_image": rgb_np,
             "anomaly_map": anomaly_map,
+            "raw_anomaly_map": pred.get("raw_anomaly_map", anomaly_map),
+            "raw_score": pred.get("raw_score", pred["image_score"]),
+            "checkpoint": getattr(model, "checkpoint_path", None),
             "heatmap": heatmap_rgb,
             "overlay": overlay_rgb,
             "annotated_overlay": bbox_overlay,

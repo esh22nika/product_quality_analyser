@@ -1,0 +1,20 @@
+{
+  "architecture": "patchcore",
+  "category": "cashew",
+  "intended_use": "Category-specific industrial visual anomaly inspection",
+  "checkpoint": "checkpoints\\patchcore_cashew.pt",
+  "checkpoint_sha256": "526292fad579db61f68f6f63a9fb571a3f0d6c73729e00ee6ececc9a03282ab3",
+  "provenance": {
+    "source": "existing local checkpoint",
+    "training_seed": null,
+    "original_training_protocol": "not recorded in this checkpoint"
+  },
+  "preprocessing": "Checkpoint model-specific resize (256x256) and normalization; EfficientAD normalization is internal.",
+  "score_semantics": "Raw scores for ranking; checkpoint-calibrated scores for fixed-threshold decisions; not probabilities.",
+  "local_evaluations": [],
+  "limitations": [
+    "No claim of transfer to unrelated conveyor footage.",
+    "Unknown/third-party training and validation selection prevents claims of a matched-training benchmark.",
+    "No real-video defect accuracy has been established for this model."
+  ]
+}

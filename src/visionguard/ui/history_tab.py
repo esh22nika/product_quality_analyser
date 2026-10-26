@@ -4,6 +4,7 @@ import gradio as gr
 import pandas as pd
 
 from visionguard.storage.repository import InspectionRepository
+from visionguard.data.categories import INSPECTION_CATEGORIES
 
 def create_history_tab():
     repo = InspectionRepository()
@@ -14,7 +15,7 @@ def create_history_tab():
         with gr.Row():
             with gr.Column(scale=1):
                 cat_filter = gr.Dropdown(
-                    choices=["All", "bottle", "cable", "capsule", "hazelnut", "metal_nut", "screw", "carpet", "leather"],
+                    choices=["All"] + INSPECTION_CATEGORIES,
                     value="All",
                     label="Filter by Category"
                 )

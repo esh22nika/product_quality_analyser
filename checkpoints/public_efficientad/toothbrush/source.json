@@ -1,0 +1,9 @@
+{
+  "category": "toothbrush",
+  "repo": "micguida1/mvtec-anomaly-checkpoints",
+  "revision": "a0d5049619c09cdd06e0fb22f82c906b53355d2f",
+  "filename": "EfficientAd/MVTecAD/toothbrush/latest/weights/lightning/model.ckpt",
+  "bytes": 75199989,
+  "sha256": "5c28449c49ed7b44a350f510b777f2f836249295a43dfd3e89053c47bbc0d8f7",
+  "url": "https://huggingface.co/micguida1/mvtec-anomaly-checkpoints/resolve/a0d5049619c09cdd06e0fb22f82c906b53355d2f/EfficientAd/MVTecAD/toothbrush/latest/weights/lightning/model.ckpt"
+}

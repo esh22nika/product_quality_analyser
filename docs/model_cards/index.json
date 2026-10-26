@@ -1,0 +1,217 @@
+[
+  {
+    "model": "patchcore",
+    "category": "bottle",
+    "card": "patchcore_bottle.json"
+  },
+  {
+    "model": "patchcore",
+    "category": "cable",
+    "card": "patchcore_cable.json"
+  },
+  {
+    "model": "patchcore",
+    "category": "candle",
+    "card": "patchcore_candle.json"
+  },
+  {
+    "model": "patchcore",
+    "category": "capsule",
+    "card": "patchcore_capsule.json"
+  },
+  {
+    "model": "patchcore",
+    "category": "capsules",
+    "card": "patchcore_capsules.json"
+  },
+  {
+    "model": "patchcore",
+    "category": "carpet",
+    "card": "patchcore_carpet.json"
+  },
+  {
+    "model": "patchcore",
+    "category": "cashew",
+    "card": "patchcore_cashew.json"
+  },
+  {
+    "model": "patchcore",
+    "category": "chewinggum",
+    "card": "patchcore_chewinggum.json"
+  },
+  {
+    "model": "patchcore",
+    "category": "fryum",
+    "card": "patchcore_fryum.json"
+  },
+  {
+    "model": "patchcore",
+    "category": "grid",
+    "card": "patchcore_grid.json"
+  },
+  {
+    "model": "patchcore",
+    "category": "hazelnut",
+    "card": "patchcore_hazelnut.json"
+  },
+  {
+    "model": "patchcore",
+    "category": "leather",
+    "card": "patchcore_leather.json"
+  },
+  {
+    "model": "patchcore",
+    "category": "macaroni1",
+    "card": "patchcore_macaroni1.json"
+  },
+  {
+    "model": "patchcore",
+    "category": "macaroni2",
+    "card": "patchcore_macaroni2.json"
+  },
+  {
+    "model": "patchcore",
+    "category": "metal_nut",
+    "card": "patchcore_metal_nut.json"
+  },
+  {
+    "model": "patchcore",
+    "category": "pcb1",
+    "card": "patchcore_pcb1.json"
+  },
+  {
+    "model": "patchcore",
+    "category": "pcb2",
+    "card": "patchcore_pcb2.json"
+  },
+  {
+    "model": "patchcore",
+    "category": "pcb3",
+    "card": "patchcore_pcb3.json"
+  },
+  {
+    "model": "patchcore",
+    "category": "pcb4",
+    "card": "patchcore_pcb4.json"
+  },
+  {
+    "model": "patchcore",
+    "category": "pill",
+    "card": "patchcore_pill.json"
+  },
+  {
+    "model": "patchcore",
+    "category": "pipe_fryum",
+    "card": "patchcore_pipe_fryum.json"
+  },
+  {
+    "model": "patchcore",
+    "category": "screw",
+    "card": "patchcore_screw.json"
+  },
+  {
+    "model": "patchcore",
+    "category": "tile",
+    "card": "patchcore_tile.json"
+  },
+  {
+    "model": "patchcore",
+    "category": "toothbrush",
+    "card": "patchcore_toothbrush.json"
+  },
+  {
+    "model": "patchcore",
+    "category": "transistor",
+    "card": "patchcore_transistor.json"
+  },
+  {
+    "model": "patchcore",
+    "category": "wood",
+    "card": "patchcore_wood.json"
+  },
+  {
+    "model": "patchcore",
+    "category": "zipper",
+    "card": "patchcore_zipper.json"
+  },
+  {
+    "model": "efficientad",
+    "category": "bottle",
+    "card": "efficientad_bottle.json"
+  },
+  {
+    "model": "efficientad",
+    "category": "cable",
+    "card": "efficientad_cable.json"
+  },
+  {
+    "model": "efficientad",
+    "category": "capsule",
+    "card": "efficientad_capsule.json"
+  },
+  {
+    "model": "efficientad",
+    "category": "carpet",
+    "card": "efficientad_carpet.json"
+  },
+  {
+    "model": "efficientad",
+    "category": "grid",
+    "card": "efficientad_grid.json"
+  },
+  {
+    "model": "efficientad",
+    "category": "hazelnut",
+    "card": "efficientad_hazelnut.json"
+  },
+  {
+    "model": "efficientad",
+    "category": "leather",
+    "card": "efficientad_leather.json"
+  },
+  {
+    "model": "efficientad",
+    "category": "metal_nut",
+    "card": "efficientad_metal_nut.json"
+  },
+  {
+    "model": "efficientad",
+    "category": "pcb1",
+    "card": "efficientad_pcb1.json"
+  },
+  {
+    "model": "efficientad",
+    "category": "pill",
+    "card": "efficientad_pill.json"
+  },
+  {
+    "model": "efficientad",
+    "category": "screw",
+    "card": "efficientad_screw.json"
+  },
+  {
+    "model": "efficientad",
+    "category": "tile",
+    "card": "efficientad_tile.json"
+  },
+  {
+    "model": "efficientad",
+    "category": "toothbrush",
+    "card": "efficientad_toothbrush.json"
+  },
+  {
+    "model": "efficientad",
+    "category": "transistor",
+    "card": "efficientad_transistor.json"
+  },
+  {
+    "model": "efficientad",
+    "category": "wood",
+    "card": "efficientad_wood.json"
+  },
+  {
+    "model": "efficientad",
+    "category": "zipper",
+    "card": "efficientad_zipper.json"
+  }
+]

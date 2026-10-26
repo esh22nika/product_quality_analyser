@@ -4,6 +4,7 @@ import gradio as gr
 import pandas as pd
 
 from visionguard.inference.batch_inference import BatchInspectionPipeline
+from visionguard.data.categories import INSPECTION_CATEGORIES
 
 def create_batch_tab():
     with gr.Tab("Batch Inspection"):
@@ -13,7 +14,7 @@ def create_batch_tab():
             with gr.Column(scale=1):
                 files_input = gr.File(file_count="multiple", file_types=["image"], label="Upload Image Batch")
                 category_dropdown = gr.Dropdown(
-                    choices=["bottle", "cable", "capsule", "hazelnut", "metal_nut", "screw", "carpet", "leather"],
+                    choices=INSPECTION_CATEGORIES,
                     value="bottle",
                     label="Product Category"
                 )
@@ -62,6 +63,7 @@ def create_batch_tab():
             )
 
         run_batch_btn.click(
+            concurrency_id="model_inference", concurrency_limit=1,
             fn=run_batch,
             inputs=[files_input, category_dropdown, model_dropdown, decision_thresh],
             outputs=[total_count, normal_count, review_count, anomaly_count, results_table, download_csv]

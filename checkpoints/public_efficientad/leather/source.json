@@ -1,0 +1,9 @@
+{
+  "category": "leather",
+  "repo": "micguida1/mvtec-anomaly-checkpoints",
+  "revision": "a0d5049619c09cdd06e0fb22f82c906b53355d2f",
+  "filename": "EfficientAd/MVTecAD/leather/latest/weights/lightning/model.ckpt",
+  "bytes": 75199989,
+  "sha256": "7d690e7ad1a93b2d00318735209b34cc869c707240b9af9d8926bfb1ebbafa60",
+  "url": "https://huggingface.co/micguida1/mvtec-anomaly-checkpoints/resolve/a0d5049619c09cdd06e0fb22f82c906b53355d2f/EfficientAd/MVTecAD/leather/latest/weights/lightning/model.ckpt"
+}

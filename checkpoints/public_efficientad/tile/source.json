@@ -1,0 +1,9 @@
+{
+  "category": "tile",
+  "repo": "micguida1/mvtec-anomaly-checkpoints",
+  "revision": "a0d5049619c09cdd06e0fb22f82c906b53355d2f",
+  "filename": "EfficientAd/MVTecAD/tile/latest/weights/lightning/model.ckpt",
+  "bytes": 75199925,
+  "sha256": "76862716521912cfa9ec39caded634f875bd2b3e51074cdf273046ad530b2eaf",
+  "url": "https://huggingface.co/micguida1/mvtec-anomaly-checkpoints/resolve/a0d5049619c09cdd06e0fb22f82c906b53355d2f/EfficientAd/MVTecAD/tile/latest/weights/lightning/model.ckpt"
+}

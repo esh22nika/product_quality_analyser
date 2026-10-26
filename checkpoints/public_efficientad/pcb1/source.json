@@ -1,0 +1,9 @@
+{
+  "category": "pcb1",
+  "repo": "thangkt/visionqc-efficientad-medium-pcb1",
+  "revision": "2e7b979c09ca77188acea2cd550f3d31493dd7df",
+  "filename": "model-best.ckpt",
+  "bytes": 184714953,
+  "sha256": "2e334ee61908dfe02131eb01c6c3b4dbb5a1fd8ab7ec007f1df7fa702c9662f8",
+  "url": "https://huggingface.co/thangkt/visionqc-efficientad-medium-pcb1/resolve/2e7b979c09ca77188acea2cd550f3d31493dd7df/model-best.ckpt"
+}

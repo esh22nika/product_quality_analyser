@@ -19,6 +19,8 @@ class BenchmarkReporter:
     ) -> Path:
         """Saves a structured experiment report to JSON."""
         report = {
+            "schema_version": 2,
+            "metric_protocol": "corrected_v2; legacy reports are not comparable",
             "experiment_id": experiment_id,
             "model_info": model_info,
             "dataset_info": dataset_info,
@@ -26,7 +28,7 @@ class BenchmarkReporter:
         }
         json_path = self.reports_dir / f"{experiment_id}.json"
         with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(report, f, indent=2)
+            json.dump(report, f, indent=2, allow_nan=False)
         return json_path
 
     def save_comparison_table(

@@ -9,7 +9,8 @@ class PixelMetricsCalculator:
     def calculate(
         gt_masks: List[np.ndarray],
         anomaly_maps: List[np.ndarray],
-        threshold: float = 0.5
+        threshold: float = 0.5,
+        decision_maps=None,
     ) -> Dict[str, Any]:
         """Calculates pixel-wise localization metrics across test images."""
         if not gt_masks or not anomaly_maps or len(gt_masks) != len(anomaly_maps):
@@ -17,8 +18,9 @@ class PixelMetricsCalculator:
 
         flat_gt = []
         flat_maps = []
+        flat_decisions = []
 
-        for gt, m in zip(gt_masks, anomaly_maps):
+        for index, (gt, m) in enumerate(zip(gt_masks, anomaly_maps)):
             # Ensure same dimensions
             if gt.shape != m.shape:
                 import cv2
@@ -28,6 +30,13 @@ class PixelMetricsCalculator:
             gt_bin = (gt > 0).astype(np.uint8)
             flat_gt.append(gt_bin.ravel())
             flat_maps.append(m.ravel())
+            decision = m if decision_maps is None else decision_maps[index]
+            if decision.shape != gt.shape:
+                import cv2
+                decision = cv2.resize(decision, (gt.shape[1], gt.shape[0]))
+            if not np.isfinite(m).all() or not np.isfinite(decision).all():
+                raise ValueError("Pixel scores must be finite.")
+            flat_decisions.append(decision.ravel())
 
         all_gt = np.concatenate(flat_gt)
         all_maps = np.concatenate(flat_maps)
@@ -42,11 +51,11 @@ class PixelMetricsCalculator:
         
         # Subsample for pixel AP if data is very large
         sample_size = min(len(all_gt), 500000)
-        idx = np.random.choice(len(all_gt), sample_size, replace=False)
+        idx = np.random.default_rng(42).choice(len(all_gt), sample_size, replace=False)
         pixel_ap = float(average_precision_score(all_gt[idx], all_maps[idx]))
 
         # Calculate IoU and Dice at threshold
-        pred_bin = (all_gt >= threshold).astype(np.uint8)
+        pred_bin = (np.concatenate(flat_decisions) >= threshold).astype(np.uint8)
         intersection = np.sum((pred_bin == 1) & (all_gt == 1))
         union = np.sum((pred_bin == 1) | (all_gt == 1))
         iou = float(intersection / union) if union > 0 else 0.0
@@ -57,5 +66,8 @@ class PixelMetricsCalculator:
             "pixel_average_precision": round(pixel_ap, 4),
             "iou": round(iou, 4),
             "dice": round(dice, 4),
+            "pixel_count": int(len(all_gt)),
+            "pixel_ap_sample_count": int(sample_size),
+            "pixel_ap_sampling_seed": 42,
             "threshold": threshold
         }

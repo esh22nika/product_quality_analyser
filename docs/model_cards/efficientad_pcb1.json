@@ -1,0 +1,96 @@
+{
+  "architecture": "efficientad",
+  "category": "pcb1",
+  "intended_use": "Category-specific industrial visual anomaly inspection",
+  "checkpoint": "checkpoints\\public_efficientad\\pcb1\\model.ckpt",
+  "checkpoint_sha256": "2e334ee61908dfe02131eb01c6c3b4dbb5a1fd8ab7ec007f1df7fa702c9662f8",
+  "provenance": {
+    "category": "pcb1",
+    "repo": "thangkt/visionqc-efficientad-medium-pcb1",
+    "revision": "2e7b979c09ca77188acea2cd550f3d31493dd7df",
+    "filename": "model-best.ckpt",
+    "bytes": 184714953,
+    "sha256": "2e334ee61908dfe02131eb01c6c3b4dbb5a1fd8ab7ec007f1df7fa702c9662f8",
+    "url": "https://huggingface.co/thangkt/visionqc-efficientad-medium-pcb1/resolve/2e7b979c09ca77188acea2cd550f3d31493dd7df/model-best.ckpt"
+  },
+  "preprocessing": "Checkpoint model-specific resize (256x256) and normalization; EfficientAD normalization is internal.",
+  "score_semantics": "Raw scores for ranking; checkpoint-calibrated scores for fixed-threshold decisions; not probabilities.",
+  "local_evaluations": [
+    {
+      "report": "reports\\verified_efficientad_visa_pcb1_2_none.json",
+      "protocol": {
+        "name": "visa",
+        "category": "pcb1",
+        "root": "C:\\Users\\Eshan\\Downloads\\DL_Project\\datasets\\visa",
+        "split": "deterministic balanced official-test subset",
+        "limit_per_class": 2,
+        "image_paths": [
+          "datasets\\visa\\pcb1\\Data\\Images\\Normal\\0107.JPG",
+          "datasets\\visa\\pcb1\\Data\\Images\\Normal\\0484.JPG",
+          "datasets\\visa\\pcb1\\Data\\Images\\Anomaly\\000.JPG",
+          "datasets\\visa\\pcb1\\Data\\Images\\Anomaly\\001.JPG"
+        ],
+        "sample_manifest_sha256": "3686d7aba616ecec7d31f3d2eb844226531afa742561548cbca23bed71783fa3",
+        "pixel_evaluation_resolution": [
+          256,
+          256
+        ],
+        "corruption": "none",
+        "threshold_selection": "fixed before evaluation; no test tuning",
+        "comparison_limitations": "Same inference samples and code; existing checkpoints may differ in training/validation protocol."
+      },
+      "metrics": {
+        "auroc": 1.0,
+        "average_precision": 1.0,
+        "precision": 0.6667,
+        "recall": 1.0,
+        "f1_score": 0.8,
+        "threshold": 0.5,
+        "confusion_matrix": [
+          [
+            1,
+            1
+          ],
+          [
+            0,
+            2
+          ]
+        ],
+        "sample_count": 4,
+        "pixel_auroc": 0.8122,
+        "pixel_average_precision": 0.0013,
+        "iou": 0.0,
+        "dice": 0.0,
+        "pixel_count": 262144,
+        "pixel_ap_sample_count": 262144,
+        "pixel_ap_sampling_seed": 42,
+        "aupro_0_3_approx": 0.36327761684499327,
+        "aupro_threshold_count": 64,
+        "aupro_protocol": "64 quantile thresholds, normalized partial PRO AUC at FPR <= 0.3",
+        "mean_inference_ms": 17897.198374994332,
+        "median_inference_ms": 17956.149000005098,
+        "elapsed_s": 72.12926560000051
+      },
+      "conditions": {
+        "name": "efficientad",
+        "device": "cpu",
+        "hardware": "Intel64 Family 6 Model 186 Stepping 2, GenuineIntel",
+        "dependencies": {
+          "torch": "2.10.0+cpu",
+          "torchvision": "0.25.0+cpu",
+          "anomalib": "2.7.0",
+          "lightning": "2.6.6"
+        },
+        "checkpoint": "C:\\Users\\Eshan\\Downloads\\DL_Project\\checkpoints\\public_efficientad\\pcb1\\model.ckpt",
+        "torch_threads": 4,
+        "score_protocol": "raw ranking; checkpoint calibration for threshold decisions",
+        "training_provenance": "existing category checkpoint; third-party validation/test selection may be unknown"
+      }
+    }
+  ],
+  "limitations": [
+    "No claim of transfer to unrelated conveyor footage.",
+    "Unknown/third-party training and validation selection prevents claims of a matched-training benchmark.",
+    "No real-video defect accuracy has been established for this model."
+  ]
+}

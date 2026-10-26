@@ -1,0 +1,20 @@
+{
+  "architecture": "patchcore",
+  "category": "zipper",
+  "intended_use": "Category-specific industrial visual anomaly inspection",
+  "checkpoint": "checkpoints\\patchcore_zipper.pt",
+  "checkpoint_sha256": "7caa58b8db135724c17ead04b619fce0b547a8c3f75bc3c50a5f2771ee2c8732",
+  "provenance": {
+    "source": "existing local checkpoint",
+    "training_seed": null,
+    "original_training_protocol": "not recorded in this checkpoint"
+  },
+  "preprocessing": "Checkpoint model-specific resize (256x256) and normalization; EfficientAD normalization is internal.",
+  "score_semantics": "Raw scores for ranking; checkpoint-calibrated scores for fixed-threshold decisions; not probabilities.",
+  "local_evaluations": [],
+  "limitations": [
+    "No claim of transfer to unrelated conveyor footage.",
+    "Unknown/third-party training and validation selection prevents claims of a matched-training benchmark.",
+    "No real-video defect accuracy has been established for this model."
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "architecture": "patchcore",
+  "category": "pcb1",
+  "intended_use": "Category-specific industrial visual anomaly inspection",
+  "checkpoint": "checkpoints\\patchcore_pcb1.pt",
+  "checkpoint_sha256": "05ade290e69dc47decb763ded844dc4d5cabe3489854e5391a2ee128a04a2cef",
+  "provenance": {
+    "source": "existing local checkpoint",
+    "training_seed": null,
+    "original_training_protocol": "not recorded in this checkpoint"
+  },
+  "preprocessing": "Checkpoint model-specific resize (256x256) and normalization; EfficientAD normalization is internal.",
+  "score_semantics": "Raw scores for ranking; checkpoint-calibrated scores for fixed-threshold decisions; not probabilities.",
+  "local_evaluations": [
+    {
+      "report": "reports\\verified_patchcore_visa_pcb1_2_none.json",
+      "protocol": {
+        "name": "visa",
+        "category": "pcb1",
+        "root": "C:\\Users\\Eshan\\Downloads\\DL_Project\\datasets\\visa",
+        "split": "deterministic balanced official-test subset",
+        "limit_per_class": 2,
+        "image_paths": [
+          "datasets\\visa\\pcb1\\Data\\Images\\Normal\\0107.JPG",
+          "datasets\\visa\\pcb1\\Data\\Images\\Normal\\0484.JPG",
+          "datasets\\visa\\pcb1\\Data\\Images\\Anomaly\\000.JPG",
+          "datasets\\visa\\pcb1\\Data\\Images\\Anomaly\\001.JPG"
+        ],
+        "sample_manifest_sha256": "3686d7aba616ecec7d31f3d2eb844226531afa742561548cbca23bed71783fa3",
+        "pixel_evaluation_resolution": [
+          256,
+          256
+        ],
+        "corruption": "none",
+        "threshold_selection": "fixed before evaluation; no test tuning",
+        "comparison_limitations": "Same inference samples and code; existing checkpoints may differ in training/validation protocol."
+      },
+      "metrics": {
+        "auroc": 0.75,
+        "average_precision": 0.8333,
+        "precision": 0.5,
+        "recall": 1.0,
+        "f1_score": 0.6667,
+        "threshold": 0.5,
+        "confusion_matrix": [
+          [
+            0,
+            2
+          ],
+          [
+            0,
+            2
+          ]
+        ],
+        "sample_count": 4,
+        "pixel_auroc": 0.9118,
+        "pixel_average_precision": 0.0277,
+        "iou": 0.0453,
+        "dice": 0.0867,
+        "pixel_count": 262144,
+        "pixel_ap_sample_count": 262144,
+        "pixel_ap_sampling_seed": 42,
+        "aupro_0_3_approx": 0.7250811214637403,
+        "aupro_threshold_count": 64,
+        "aupro_protocol": "64 quantile thresholds, normalized partial PRO AUC at FPR <= 0.3",
+        "mean_inference_ms": 569.6101500070654,
+        "median_inference_ms": 566.8406000186224,
+        "elapsed_s": 2.868196399998851
+      },
+      "conditions": {
+        "name": "patchcore",
+        "device": "cpu",
+        "hardware": "Intel64 Family 6 Model 186 Stepping 2, GenuineIntel",
+        "dependencies": {
+          "torch": "2.10.0+cpu",
+          "torchvision": "0.25.0+cpu",
+          "anomalib": "2.7.0",
+          "lightning": "2.6.6"
+        },
+        "checkpoint": "C:\\Users\\Eshan\\Downloads\\DL_Project\\checkpoints\\patchcore_pcb1.pt",
+        "torch_threads": 4,
+        "score_protocol": "raw ranking; checkpoint calibration for threshold decisions",
+        "training_provenance": "existing category checkpoint; third-party validation/test selection may be unknown"
+      }
+    }
+  ],
+  "limitations": [
+    "No claim of transfer to unrelated conveyor footage.",
+    "Unknown/third-party training and validation selection prevents claims of a matched-training benchmark.",
+    "No real-video defect accuracy has been established for this model."
+  ]
+}

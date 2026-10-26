@@ -49,7 +49,12 @@ class ImagePreprocessor:
             raise TypeError(f"Unsupported image input type: {type(image_input)}")
 
         if pil_img.mode != "RGB":
+            if pil_img.width * pil_img.height > 40000000:
+                raise ValueError("Image exceeds the 40 megapixel inspection limit.")
             pil_img = pil_img.convert("RGB")
+
+        if pil_img.width * pil_img.height > 40000000:
+            raise ValueError("Image exceeds the 40 megapixel inspection limit.")
 
         rgb_np = np.array(pil_img)
         return rgb_np, pil_img

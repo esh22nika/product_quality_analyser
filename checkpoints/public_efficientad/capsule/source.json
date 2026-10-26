@@ -1,0 +1,9 @@
+{
+  "category": "capsule",
+  "repo": "micguida1/mvtec-anomaly-checkpoints",
+  "revision": "a0d5049619c09cdd06e0fb22f82c906b53355d2f",
+  "filename": "EfficientAd/MVTecAD/capsule/latest/weights/lightning/model.ckpt",
+  "bytes": 75199989,
+  "sha256": "369362ed4e2672f5a027310f3fb609ee388e409fd3a04c13e69c8e3df73f9764",
+  "url": "https://huggingface.co/micguida1/mvtec-anomaly-checkpoints/resolve/a0d5049619c09cdd06e0fb22f82c906b53355d2f/EfficientAd/MVTecAD/capsule/latest/weights/lightning/model.ckpt"
+}

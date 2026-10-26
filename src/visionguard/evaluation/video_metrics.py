@@ -1,57 +1,43 @@
-from typing import Any, Dict, List
+"""Only report metrics with explicit covered ground truth; one-to-one event matching."""
 import numpy as np
-import pandas as pd
+from sklearn.metrics import roc_auc_score
 
 class VideoMetricsCalculator:
-    """Calculates frame AUROC, event precision/recall, duplicate rate, and latency."""
-
     @staticmethod
-    def calculate(
-        frame_gt: List[int],
-        frame_scores: List[float],
-        detected_events: List[Dict[str, Any]],
-        ground_truth_events: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
-        """Calculates video inspection performance metrics."""
-        from sklearn.metrics import roc_auc_score
-
-        metrics = {}
-        if len(np.unique(frame_gt)) > 1:
-            metrics["frame_auroc"] = round(float(roc_auc_score(frame_gt, frame_scores)), 4)
-        else:
-            metrics["frame_auroc"] = None
-
-        total_gt = len(ground_truth_events)
-        total_pred = len(detected_events)
-
-        # Match predicted events to ground truth events by temporal overlap
-        matched_gt = set()
-        matched_pred = set()
-
-        for p_idx, p_evt in enumerate(detected_events):
-            p_start, p_end = p_evt["start_time_s"], p_evt["end_time_s"]
-            for g_idx, g_evt in enumerate(ground_truth_events):
-                g_start, g_end = g_evt["start_time_s"], g_evt["end_time_s"]
-                # Check overlap
-                if max(p_start, g_start) <= min(p_end, g_end):
-                    matched_gt.add(g_idx)
-                    matched_pred.add(p_idx)
-
-        tp = len(matched_gt)
-        precision = tp / total_pred if total_pred > 0 else 0.0
-        recall = tp / total_gt if total_gt > 0 else 0.0
-        f1 = (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
-
-        duplicate_alerts = max(0, total_pred - len(matched_gt))
-        duplicate_rate = duplicate_alerts / total_pred if total_pred > 0 else 0.0
-
-        metrics.update({
-            "event_precision": round(precision, 4),
-            "event_recall": round(recall, 4),
-            "event_f1": round(f1, 4),
-            "total_detected_events": total_pred,
-            "total_gt_events": total_gt,
-            "duplicate_alert_rate": round(duplicate_rate, 4)
-        })
-
+    def calculate(frame_gt=None, frame_scores=None, detected_events=None, ground_truth_events=None, iou_threshold=0.1):
+        metrics = dict(evaluation_mode="qualitative", frame_auroc=None, event_precision=None,
+                       event_recall=None, duplicate_alert_rate=None)
+        if frame_gt is not None:
+            labels, scores = np.asarray(frame_gt), np.asarray(frame_scores, dtype=float)
+            if len(labels) != len(scores) or not len(labels) or not np.isin(labels, [0, 1]).all() or not np.isfinite(scores).all():
+                raise ValueError("Frame ground truth and scores must be finite, binary and aligned.")
+            metrics["evaluation_mode"] = "provided_ground_truth"
+            metrics["frame_auroc"] = float(roc_auc_score(labels, scores)) if len(np.unique(labels)) == 2 else None
+        if ground_truth_events is None:
+            return metrics
+        predicted, truth = detected_events or [], ground_truth_events
+        candidates, overlaps = [], set()
+        for p, pred in enumerate(predicted):
+            for g, gt in enumerate(truth):
+                intersection = max(0, min(pred["end_time_s"], gt["end_time_s"]) - max(pred["start_time_s"], gt["start_time_s"]))
+                union = max(pred["end_time_s"], gt["end_time_s"]) - min(pred["start_time_s"], gt["start_time_s"])
+                if intersection > 0:
+                    overlaps.add(p)
+                if union > 0 and intersection / union >= iou_threshold:
+                    candidates.append((intersection / union, p, g))
+        used_p, used_g, delays = set(), set(), []
+        for _, p, g in sorted(candidates, reverse=True):
+            if p not in used_p and g not in used_g:
+                used_p.add(p)
+                used_g.add(g)
+                delays.append(max(0, predicted[p].get("detected_time_s", predicted[p]["start_time_s"]) - truth[g]["start_time_s"]))
+        tp = len(used_p)
+        precision = tp / len(predicted) if predicted else 0.0
+        recall = tp / len(truth) if truth else None
+        metrics.update(evaluation_mode="provided_ground_truth", event_precision=precision, event_recall=recall,
+                       event_f1=2 * precision * recall / (precision + recall) if recall is not None and precision + recall else None,
+                       total_detected_events=len(predicted), total_gt_events=len(truth),
+                       duplicate_alert_rate=len(overlaps - used_p) / len(predicted) if predicted else 0.0,
+                       unmatched_alerts=len(predicted) - tp, mean_detection_delay_s=float(np.mean(delays)) if delays else None,
+                       matching="one-to-one temporal IoU", temporal_iou_threshold=iou_threshold)
         return metrics

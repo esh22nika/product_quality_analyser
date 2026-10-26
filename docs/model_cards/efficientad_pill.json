@@ -1,0 +1,24 @@
+{
+  "architecture": "efficientad",
+  "category": "pill",
+  "intended_use": "Category-specific industrial visual anomaly inspection",
+  "checkpoint": "checkpoints\\public_efficientad\\pill\\model.ckpt",
+  "checkpoint_sha256": "08a6c283a2ffce6a36a0627ab18195dce35cf0d6f32e1a26e4e08d7a17c4f31b",
+  "provenance": {
+    "category": "pill",
+    "repo": "micguida1/mvtec-anomaly-checkpoints",
+    "revision": "a0d5049619c09cdd06e0fb22f82c906b53355d2f",
+    "filename": "EfficientAd/MVTecAD/pill/latest/weights/lightning/model.ckpt",
+    "bytes": 75199989,
+    "sha256": "08a6c283a2ffce6a36a0627ab18195dce35cf0d6f32e1a26e4e08d7a17c4f31b",
+    "url": "https://huggingface.co/micguida1/mvtec-anomaly-checkpoints/resolve/a0d5049619c09cdd06e0fb22f82c906b53355d2f/EfficientAd/MVTecAD/pill/latest/weights/lightning/model.ckpt"
+  },
+  "preprocessing": "Checkpoint model-specific resize (256x256) and normalization; EfficientAD normalization is internal.",
+  "score_semantics": "Raw scores for ranking; checkpoint-calibrated scores for fixed-threshold decisions; not probabilities.",
+  "local_evaluations": [],
+  "limitations": [
+    "No claim of transfer to unrelated conveyor footage.",
+    "Unknown/third-party training and validation selection prevents claims of a matched-training benchmark.",
+    "No real-video defect accuracy has been established for this model."
+  ]
+}

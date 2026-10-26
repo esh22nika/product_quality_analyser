@@ -15,7 +15,7 @@ logger = setup_logger("visionguard.models.patchcore")
 try:
     from anomalib.models import Patchcore as AnomalibPatchcore
     from anomalib.engine import Engine
-    from anomalib.data import MVTecAD
+    from anomalib.data import MVTecAD, Visa
     ANOMALIB_AVAILABLE = True
 except ImportError:
     ANOMALIB_AVAILABLE = False
@@ -31,12 +31,15 @@ class PatchCoreModel(AnomalyDetector):
         threshold: float = 0.5,
         review_low: float = 0.35,
         review_high: float = 0.65,
-        device: str = "auto"
+        device: str = "auto",
+        coreset_sampling_ratio: float = 0.1,
+        pre_trained: bool = True
     ):
         self.backbone = backbone
         self.threshold = threshold
         self.review_low = review_low
         self.review_high = review_high
+        self.coreset_sampling_ratio = coreset_sampling_ratio
         self.device = "cuda" if (device == "cuda" or (device == "auto" and torch.cuda.is_available())) else "cpu"
         self.preprocessor = ImagePreprocessor()
         self.model = None
@@ -45,7 +48,8 @@ class PatchCoreModel(AnomalyDetector):
 
         if ANOMALIB_AVAILABLE:
             try:
-                self.model = AnomalibPatchcore(backbone=self.backbone)
+                self.model = AnomalibPatchcore(backbone=self.backbone, coreset_sampling_ratio=self.coreset_sampling_ratio,
+                                              pre_trained=pre_trained)
                 self.model.to(self.device)
                 self.model.eval()
             except Exception as e:
@@ -58,20 +62,38 @@ class PatchCoreModel(AnomalyDetector):
 
         root = dataset_config.get("root", "./datasets/mvtec_ad")
         category = dataset_config.get("category", "bottle")
+        dataset_name = dataset_config.get("dataset", "mvtec_ad").lower()
         checkpoint_dir = dataset_config.get("checkpoint_dir", "./checkpoints")
         
-        logger.info(f"Training PatchCore on category: {category} from {root}...")
-        datamodule = MVTecAD(root=root, category=category, train_batch_size=8, num_workers=0)
+        # Determine coreset ratio: VisA has ~1000 high-res images (~1M patch features).
+        # On CPU, a ratio of 0.002 (~1800 features) finishes in ~1-2 mins with high AUROC.
+        ratio = dataset_config.get("coreset_sampling_ratio")
+        if ratio is None:
+            ratio = 0.002 if "visa" in dataset_name else 0.1
+        
+        logger.info(f"Training PatchCore on category: {category} (dataset: {dataset_name}) from {root} with coreset_ratio={ratio}...")
+        self.coreset_sampling_ratio = ratio
+        self.model = AnomalibPatchcore(backbone=self.backbone, coreset_sampling_ratio=self.coreset_sampling_ratio)
+        self.model.to(self.device)
+
+        if "visa" in dataset_name:
+            datamodule = Visa(root=root, category=category, train_batch_size=8, num_workers=0,
+                              val_split_mode="from_test", val_split_ratio=0.5, seed=42)
+        else:
+            datamodule = MVTecAD(root=root, category=category, train_batch_size=8, num_workers=0,
+                                 val_split_mode="from_test", val_split_ratio=0.5, seed=42)
         
         engine = Engine(
             default_root_dir=checkpoint_dir,
-            accelerator=self.device,
+            accelerator="gpu" if self.device == "cuda" else "cpu",
             devices=1,
             max_epochs=1
         )
         
         start_time = time.time()
+        self.model.train()
         engine.fit(datamodule=datamodule, model=self.model)
+        self.model.eval()
         train_duration = time.time() - start_time
 
         ckpt_path = Path(checkpoint_dir) / f"patchcore_{category}.pt"
@@ -93,84 +115,14 @@ class PatchCoreModel(AnomalyDetector):
             raise FileNotFoundError(f"Checkpoint not found at: {checkpoint_path}")
 
         logger.info(f"Loading PatchCore checkpoint from {ckpt}...")
-        state_dict = torch.load(ckpt, map_location=self.device)
+        state_dict = torch.load(ckpt, map_location=self.device, weights_only=True)
         if self.model is not None:
             self.model.load_state_dict(state_dict, strict=False)
             self.model.to(self.device)
             self.model.eval()
+        self.checkpoint_path = str(ckpt.resolve())
         self.is_loaded = True
 
-    def predict(self, image: np.ndarray | str) -> Dict[str, Any]:
-        """Performs anomaly inference and returns normalized output."""
-        start_time = time.time()
-        try:
-            rgb_np, pil_img = self.preprocessor.load_and_validate(image)
-            tensor = self.preprocessor.to_tensor(pil_img).to(self.device)
-
-            h, w = rgb_np.shape[:2]
-
-            if self.model is not None:
-                with torch.no_grad():
-                    outputs = self.model(tensor)
-                    
-                    # Extract score and anomaly map
-                    if isinstance(outputs, dict):
-                        score = float(outputs.get("pred_score", outputs.get("anomaly_score", 0.0)))
-                        raw_map = outputs.get("anomaly_map", outputs.get("pred_mask", None))
-                    elif hasattr(outputs, "pred_score"):
-                        score = float(outputs.pred_score.cpu().item())
-                        raw_map = outputs.anomaly_map if hasattr(outputs, "anomaly_map") else None
-                    else:
-                        score = float(outputs[0]) if len(outputs) > 0 else 0.0
-                        raw_map = outputs[1] if len(outputs) > 1 else None
-
-                    if raw_map is not None:
-                        if isinstance(raw_map, torch.Tensor):
-                            raw_map = raw_map.squeeze().cpu().numpy()
-                        # Resize anomaly map back to original input image size
-                        anomaly_map = cv2.resize(raw_map.astype(np.float32), (w, h))
-                        # Normalize 0..1 safely
-                        min_v, max_v = anomaly_map.min(), anomaly_map.max()
-                        if max_v > min_v:
-                            anomaly_map = (anomaly_map - min_v) / (max_v - min_v)
-                        else:
-                            anomaly_map = np.zeros((h, w), dtype=np.float32)
-                    else:
-                        anomaly_map = np.zeros((h, w), dtype=np.float32)
-            else:
-                # Fallback if uninitialized
-                score = 0.0
-                anomaly_map = np.zeros((h, w), dtype=np.float32)
-
-            # Three-way decision policy
-            if score >= self.review_high:
-                label = "LIKELY_ANOMALOUS"
-            elif score <= self.review_low:
-                label = "LIKELY_NORMAL"
-            else:
-                label = "REVIEW_REQUIRED"
-
-            inference_ms = (time.time() - start_time) * 1000.0
-
-            return {
-                "model_name": "PatchCore",
-                "image_score": round(score, 4),
-                "anomaly_map": anomaly_map,
-                "predicted_label": label,
-                "threshold": self.threshold,
-                "inference_ms": round(inference_ms, 2),
-                "error": None
-            }
-
-        except Exception as e:
-            logger.error(f"Prediction failed: {e}")
-            inference_ms = (time.time() - start_time) * 1000.0
-            return {
-                "model_name": "PatchCore",
-                "image_score": 0.0,
-                "anomaly_map": None,
-                "predicted_label": "REVIEW_REQUIRED",
-                "threshold": self.threshold,
-                "inference_ms": round(inference_ms, 2),
-                "error": str(e)
-            }
+    def predict(self, image):
+        from visionguard.models.prediction import predict_checkpoint
+        return predict_checkpoint(self, image, "PatchCore")

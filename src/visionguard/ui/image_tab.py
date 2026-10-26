@@ -2,8 +2,11 @@ import uuid
 from pathlib import Path
 import gradio as gr
 import numpy as np
+from PIL import Image
 
 from visionguard.inference.image_inference import ImageInspectionPipeline
+from visionguard.data.categories import INSPECTION_CATEGORIES
+from visionguard.storage.export import export_image_result
 from visionguard.storage.repository import InspectionRepository
 from visionguard.storage.artifacts import ArtifactManager
 
@@ -18,7 +21,7 @@ def create_image_tab():
             with gr.Column(scale=1):
                 image_input = gr.Image(type="numpy", label="Upload Product Image")
                 category_dropdown = gr.Dropdown(
-                    choices=["bottle", "cable", "capsule", "hazelnut", "metal_nut", "screw", "carpet", "leather"],
+                    choices=INSPECTION_CATEGORIES,
                     value="bottle",
                     label="Product Category"
                 )
@@ -33,6 +36,19 @@ def create_image_tab():
                 
                 inspect_btn = gr.Button("Inspect Image", variant="primary")
                 clear_btn = gr.Button("Clear")
+                gr.Markdown("Public benchmark examples (no photograph required):")
+                examples = [
+                    ("Normal bottle", Path("mvtec_anomaly_detection/bottle/test/good/000.png")),
+                    ("Annotated defective bottle: broken_large", Path("mvtec_anomaly_detection/bottle/test/broken_large/000.png")),
+                ]
+                def example_loader(path):
+                    def load():
+                        with Image.open(path) as image:
+                            return np.array(image.convert("RGB")), "bottle"
+                    return load
+                for label, path in examples:
+                    if path.is_file():
+                        gr.Button(label).click(example_loader(path), outputs=[image_input, category_dropdown])
 
             with gr.Column(scale=2):
                 with gr.Row():
@@ -50,13 +66,14 @@ def create_image_tab():
                 with gr.Row():
                     overlay_display = gr.Image(label="Overlay with Bounding Boxes", interactive=False)
                     mask_display = gr.Image(label="Thresholded Suspicious Mask", interactive=False)
+                download_result = gr.File(label="Download images, anomaly maps and JSON report")
 
         def run_inspection(img, cat, model_name, d_thresh, p_thresh, min_area):
             if img is None:
                 return (
                     "No Image Provided", 0.0, 0.0, 0.0,
                     "Please upload a valid product image.",
-                    None, None, None, None
+                    None, None, None, None, None
                 )
 
             pipeline = ImageInspectionPipeline(model_name=model_name, category=cat)
@@ -72,11 +89,12 @@ def create_image_tab():
                 return (
                     "ERROR", 0.0, 0.0, 0.0,
                     f"Inference failed: {err}",
-                    img, None, None, None
+                    img, None, None, None, None
                 )
 
             insp_id = f"INSP_{uuid.uuid4().hex[:8]}"
             artifact_mgr.save_image_artifact(insp_id, "overlay.png", res["annotated_overlay"])
+            result_archive = export_image_result(res, artifact_mgr.artifacts_dir / insp_id)
             repo.insert_inspection(
                 inspection_id=insp_id,
                 input_filename=f"{cat}_sample.png",
@@ -100,23 +118,25 @@ def create_image_tab():
                 res["original_image"],
                 res["heatmap"],
                 res["annotated_overlay"],
-                res["thresholded_mask"]
+                res["thresholded_mask"],
+                result_archive
             )
 
         inspect_btn.click(
             fn=run_inspection,
+            concurrency_id="model_inference", concurrency_limit=1,
             inputs=[image_input, category_dropdown, model_dropdown, decision_thresh, pixel_thresh, min_region_area],
             outputs=[
                 status_badge, score_box, latency_box, area_box,
-                warnings_box, orig_display, heatmap_display, overlay_display, mask_display
+                warnings_box, orig_display, heatmap_display, overlay_display, mask_display, download_result
             ]
         )
 
         clear_btn.click(
-            fn=lambda: (None, "Awaiting Input", 0.0, 0.0, 0.0, "None", None, None, None, None),
+            fn=lambda: (None, "Awaiting Input", 0.0, 0.0, 0.0, "None", None, None, None, None, None),
             inputs=[],
             outputs=[
                 image_input, status_badge, score_box, latency_box, area_box,
-                warnings_box, orig_display, heatmap_display, overlay_display, mask_display
+                warnings_box, orig_display, heatmap_display, overlay_display, mask_display, download_result
             ]
         )

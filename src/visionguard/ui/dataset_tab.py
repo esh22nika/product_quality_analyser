@@ -11,7 +11,7 @@ def create_dataset_tab():
         with gr.Row():
             with gr.Column(scale=1):
                 dataset_name = gr.Dropdown(choices=["mvtec_ad", "visa"], value="mvtec_ad", label="Dataset")
-                dataset_root = gr.Textbox(value="./datasets/mvtec_ad", label="Dataset Path")
+                dataset_root = gr.Textbox(value="./mvtec_anomaly_detection" if Path("./mvtec_anomaly_detection").is_dir() else "./datasets/mvtec_ad", label="Dataset Path")
                 refresh_btn = gr.Button("Scan & Validate Dataset", variant="primary")
 
             with gr.Column(scale=2):
@@ -21,12 +21,12 @@ def create_dataset_tab():
                 > [!NOTE]
                 > **Dataset Licence Restrictions:**
                 > - **MVTec AD**: Strictly for non-commercial research & education under its published licence.
-                > - **VisA**: Research / non-commercial use terms apply.
+                > - **VisA**: CC BY 4.0; retain dataset attribution.
                 > Please respect benchmark terms and place the downloaded subsets into `./datasets/mvtec_ad`.
                 """)
 
         def scan_dataset(ds_name, root):
-            res = DatasetValidator.validate_mvtec_ad(root)
+            res = DatasetValidator.validate_visa(root) if ds_name == "visa" else DatasetValidator.validate_mvtec_ad(root)
             if not res["valid"]:
                 return (
                     f"Dataset Invalid or Not Found: {res.get('error', 'Unknown issue')}",

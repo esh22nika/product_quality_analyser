@@ -1,0 +1,9 @@
+{
+  "category": "transistor",
+  "repo": "micguida1/mvtec-anomaly-checkpoints",
+  "revision": "a0d5049619c09cdd06e0fb22f82c906b53355d2f",
+  "filename": "EfficientAd/MVTecAD/transistor/latest/weights/lightning/model.ckpt",
+  "bytes": 75199989,
+  "sha256": "8cae26e620b9fed63a33d2593a42e03a3a958465ca139006884aa6a06fb3ac60",
+  "url": "https://huggingface.co/micguida1/mvtec-anomaly-checkpoints/resolve/a0d5049619c09cdd06e0fb22f82c906b53355d2f/EfficientAd/MVTecAD/transistor/latest/weights/lightning/model.ckpt"
+}

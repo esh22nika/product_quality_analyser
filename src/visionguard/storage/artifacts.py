@@ -29,11 +29,15 @@ class ArtifactManager:
     def cleanup_inspection(self, inspection_id: str) -> None:
         """Removes saved artifacts for a specific inspection."""
         target_dir = self.artifacts_dir / inspection_id
+        if not inspection_id.startswith(("INSP_", "VID_")) or Path(inspection_id).name != inspection_id:
+            raise ValueError("Only inspection IDs can be removed")
+        if not target_dir.resolve().is_relative_to(self.artifacts_dir.resolve()):
+            raise ValueError("Cleanup target escapes artifact directory")
         if target_dir.exists():
             shutil.rmtree(target_dir)
 
     def cleanup_all(self) -> None:
         """Removes all stored artifact directories."""
         for item in self.artifacts_dir.iterdir():
-            if item.is_dir():
+            if item.is_dir() and item.name.startswith(("INSP_", "VID_")) and not item.is_symlink():
                 shutil.rmtree(item)

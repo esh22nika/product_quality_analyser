@@ -1,200 +1,201 @@
+"""Bounded streaming video inspection with explicit provenance and annotation gating."""
+import json
+import math
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
 import cv2
 import numpy as np
 import pandas as pd
-
 from visionguard.models.loader import ModelManager
 from visionguard.inference.postprocessing import AnomalyPostprocessor
-from visionguard.logging_config import setup_logger
+from visionguard.evaluation.video_metrics import VideoMetricsCalculator
 
-logger = setup_logger("visionguard.inference.video")
+FRAME_COLUMNS = ["frame_idx", "timestamp_s", "anomaly_score", "raw_score", "is_anomalous", "predicted_label"]
+EVENT_COLUMNS = ["event_id", "start_time_s", "end_time_s", "detected_time_s", "duration_s", "suspicious_frame_count", "peak_anomaly_score", "mean_anomaly_score"]
 
 class VideoInspectionPipeline:
-    """Processes video frames, aggregates temporal events, and produces annotated video."""
-
-    def __init__(
-        self,
-        model_name: str = "patchcore",
-        category: Optional[str] = "bottle",
-        sampling_interval: int = 2,
-        decision_threshold: float = 0.5,
-        consecutive_frames: int = 3,
-        merge_gap_frames: int = 5,
-        device: str = "auto"
-    ):
-        self.model_name = model_name
-        self.category = category
-        self.sampling_interval = max(1, sampling_interval)
-        self.decision_threshold = decision_threshold
-        self.consecutive_frames = consecutive_frames
-        self.merge_gap_frames = merge_gap_frames
-        self.device = device
+    def __init__(self, model_name="patchcore", category="bottle", sampling_interval=15,
+                 decision_threshold=0.5, consecutive_frames=3, merge_gap_frames=5,
+                 device="auto", min_event_duration_s=0.0, roi=None, max_analysis_frames=120):
+        if sampling_interval < 1 or consecutive_frames < 1 or merge_gap_frames < 0 or max_analysis_frames < 1:
+            raise ValueError("Sampling/event counts must be positive and merge gap nonnegative")
+        self.model_name, self.category, self.device = model_name, category, device
+        self.sampling_interval = int(sampling_interval)
+        self.decision_threshold = float(decision_threshold)
+        self.consecutive_frames = int(consecutive_frames)
+        self.merge_gap_frames = int(merge_gap_frames)
+        self.min_event_duration_s = max(0, float(min_event_duration_s))
+        self.roi, self.max_analysis_frames = roi, int(max_analysis_frames)
         self.postprocessor = AnomalyPostprocessor()
 
-    def process_video(
-        self,
-        video_path: str | Path,
-        output_video_path: Optional[str | Path] = None,
-        max_duration_s: float = 60.0
-    ) -> Dict[str, Any]:
-        """Runs frame extraction, model inference, temporal aggregation, and creates annotated video."""
+    def process_video(self, video_path, output_video_path=None, max_duration_s=60.0, provenance=None, annotations=None):
         video_path = Path(video_path)
-        if not video_path.exists():
-            raise FileNotFoundError(f"Video file not found: {video_path}")
-
+        if not video_path.is_file():
+            raise FileNotFoundError(video_path)
+        if video_path.suffix.lower() not in {".mp4", ".avi", ".mov", ".webm"}:
+            raise ValueError("Use MP4, AVI or MOV (prepared WebM is also supported)")
+        if max_duration_s <= 0 or video_path.stat().st_size > 2 * 1024**3:
+            raise ValueError("Duration must be positive; uploaded video must be under 2 GiB")
         cap = cv2.VideoCapture(str(video_path))
-        if not cap.isOpened():
-            raise ValueError(f"Could not open video file: {video_path}")
-
-        fps = cap.get(cv2.CAP_PROP_FPS) or 25.0
-        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        orig_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        orig_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        duration_s = total_frames / fps if fps > 0 else 0.0
-
-        max_frames_to_read = int(min(total_frames, fps * max_duration_s))
-
-        model = ModelManager.get_model(
-            model_name=self.model_name,
-            category=self.category,
-            device=self.device
-        )
-        model.threshold = self.decision_threshold
-
-        frame_records: List[Dict[str, Any]] = []
-        suspicious_frames_gallery: List[Dict[str, Any]] = []
-
         writer = None
-        if output_video_path is not None:
-            out_p = Path(output_video_path)
-            out_p.parent.mkdir(parents=True, exist_ok=True)
-            # Use mp4v codec for cross-platform compatibility
-            fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-            writer = cv2.VideoWriter(str(out_p), fourcc, fps, (orig_w, orig_h))
+        records, gallery = [], []
+        out = Path(output_video_path) if output_video_path else None
+        started = time.perf_counter()
+        from visionguard.config import load_default_config
+        limits = load_default_config()
+        try:
+            if not cap.isOpened():
+                raise ValueError("Video cannot be decoded. Convert to H.264 MP4 using FFmpeg.")
+            fps = float(cap.get(cv2.CAP_PROP_FPS))
+            width, height = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            if not math.isfinite(fps) or not 0 < fps <= 1000 or min(width, height) <= 0 or max(width, height) > limits.get("video.max_dimension", 4096):
+                raise ValueError("Invalid/unsupported video metadata")
+            suggested = (provenance or {}).get("recommended_roi") if (provenance or {}).get("sequence_type") == "synthetic_image_sequence" else None
+            roi = tuple(map(int, self.roi if self.roi is not None else suggested)) if self.roi is not None or suggested is not None else (0, 0, width, height)
+            if len(roi) != 4:
+                raise ValueError("ROI must be x,y,width,height in source pixels")
+            x, y, rw, rh = roi
+            if x < 0 or y < 0 or min(rw, rh) <= 0 or x + rw > width or y + rh > height:
+                raise ValueError("ROI is outside the source frame")
+            model = ModelManager.get_model(self.model_name, self.category, device=self.device)
+            model.threshold = self.decision_threshold
+            if out:
+                out.parent.mkdir(parents=True, exist_ok=True)
+                output_width = max(2, min(width, limits.get("video.output_max_width", 960)) // 2 * 2)
+                output_height = max(2, int(height * output_width / width) // 2 * 2)
+                writer = cv2.VideoWriter(str(out), cv2.VideoWriter_fourcc(*"mp4v"), fps, (output_width, output_height))
+                if not writer.isOpened():
+                    raise RuntimeError("MP4 encoder unavailable. Install FFmpeg-enabled OpenCV.")
+            frames_read = 0
+            limit = int(fps * min(max_duration_s, limits.get("video.max_duration_s", 60)))
+            while frames_read < limit and len(records) < self.max_analysis_frames:
+                ok, bgr = cap.read()
+                if not ok:
+                    break
+                index = frames_read
+                frames_read += 1
+                text, color = "NOT ANALYZED (sampling)", (180, 180, 180)
+                if index % self.sampling_interval == 0:
+                    rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+                    crop = rgb[y:y+rh, x:x+rw]
+                    pred = model.predict(crop)
+                    if pred.get("error") or pred.get("anomaly_map") is None:
+                        raise RuntimeError(f"Frame {index}: {pred.get('error', 'No anomaly map')}")
+                    score = float(pred["image_score"])
+                    if not math.isfinite(score):
+                        raise ValueError(f"Non-finite frame score at {index}")
+                    suspicious = score >= self.decision_threshold
+                    records.append(dict(frame_idx=index, timestamp_s=index / fps, anomaly_score=score,
+                                        raw_score=float(pred.get("raw_score", score)), is_anomalous=suspicious,
+                                        predicted_label=pred["predicted_label"]))
+                    heatmap = self.postprocessor.generate_heatmap(pred["anomaly_map"])
+                    overlay = self.postprocessor.generate_overlay(crop, heatmap)
+                    rgb[y:y+rh, x:x+rw] = overlay
+                    bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+                    cv2.rectangle(bgr, (x, y), (x+rw-1, y+rh-1), (255, 255, 0), 1)
+                    text = f"{index/fps:.2f}s | score {score:.3f} | {'SUSPICIOUS' if suspicious else 'BELOW THRESHOLD'}"
+                    color = (0, 0, 255) if suspicious else (0, 200, 0)
+                    if out:
+                        maps = out.parent / "maps"
+                        maps.mkdir(exist_ok=True)
+                        np.savez_compressed(maps / f"frame_{index:08d}.npz", timestamp_s=index/fps,
+                                            calibrated=cv2.resize(pred["anomaly_map"], (256, 256)),
+                                            raw=cv2.resize(pred.get("raw_anomaly_map", pred["anomaly_map"]), (256, 256)), roi=np.array(roi))
+                    if len(gallery) < 12:
+                        thumb = cv2.resize(rgb, (min(width, 480), max(1, int(height * min(width, 480) / width))))
+                        gallery.append(dict(frame_idx=index, timestamp_s=index/fps, score=score, overlay=thumb))
+                mode = "SYNTHETIC | " if (provenance or {}).get("sequence_type") == "synthetic_image_sequence" else ""
+                cv2.putText(bgr, mode + text, (10, min(height-5, 28)), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 1)
+                if writer:
+                    writer.write(cv2.resize(bgr, (output_width, output_height)))
+            if not records:
+                raise ValueError("No frames could be analyzed")
+        except Exception:
+            if writer is not None:
+                writer.release()
+                writer = None
+            if out:
+                out.unlink(missing_ok=True)
+            raise
+        finally:
+            cap.release()
+            if writer is not None:
+                writer.release()
+        elapsed = time.perf_counter() - started
+        encoding_started = time.perf_counter()
+        if out:
+            from visionguard.inference.video_encoding import browser_encode
+            browser_encode(out)
+        df = pd.DataFrame(records, columns=FRAME_COLUMNS)
+        events = self._aggregate_events(df, fps)
+        for event in events:
+            event["end_time_s"] = min(event["end_time_s"], frames_read / fps)
+            event["duration_s"] = event["end_time_s"] - event["start_time_s"]
+        event_df = pd.DataFrame(events, columns=EVENT_COLUMNS)
+        origin = provenance or dict(sequence_type="uploaded_video", annotation_type="none")
+        metrics = VideoMetricsCalculator.calculate()
+        if annotations is not None:
+            if origin.get("sequence_type") == "synthetic_image_sequence":
+                raise ValueError("Synthetic demonstrations cannot be reported as real-video benchmarks")
+            if annotations.get("annotation_type") != "temporal_intervals" or annotations.get("complete") is not True:
+                raise ValueError("Evaluation needs complete temporal_intervals annotations; partial/unlabeled video is qualitative")
+            end = frames_read / fps
+            if annotations.get("coverage_start_s", 0) > 0 or annotations.get("coverage_end_s", -1) < end:
+                raise ValueError("Annotations do not cover the complete processed video interval")
+            truth = annotations.get("events")
+            if not isinstance(truth, list):
+                raise ValueError("Annotations must provide an events list, including [] for a verified normal clip")
+            for event in truth:
+                if not (0 <= event["start_time_s"] < event["end_time_s"] <= annotations["coverage_end_s"]):
+                    raise ValueError("Invalid ground-truth event interval")
+            truth = [dict(start_time_s=e["start_time_s"], end_time_s=min(e["end_time_s"], end)) for e in truth if e["start_time_s"] < end]
+            labels = [int(any(e["start_time_s"] <= r["timestamp_s"] < e["end_time_s"] for e in truth)) for r in records]
+            metrics = VideoMetricsCalculator.calculate(labels, df.raw_score.tolist(), events, truth)
+        metadata = dict(total_frames=total, processed_frames=len(records), frames_read=frames_read, fps=fps,
+                        duration_s=total/fps if total > 0 else None, processed_duration_s=frames_read/fps,
+                        resolution=f"{width}x{height}", processing_time_s=elapsed, throughput_fps=len(records)/elapsed,
+                        truncated=(total > frames_read), sampling_interval=self.sampling_interval, roi=list(roi),
+                        model=self.model_name, category=self.category, tracking="none; events are temporal clusters, not product counts",
+                        checkpoint=getattr(model, "checkpoint_path", None), device=getattr(model, "device", self.device),
+                        output_codec="h264/yuv420p", encoding_time_s=time.perf_counter()-encoding_started,
+                        saved_map_resolution=[256, 256],
+                        unsampled_frames="No prediction; marked NOT ANALYZED", provenance=origin)
+        if out:
+            df.to_csv(out.parent / "frame_scores.csv", index=False)
+            event_df.to_csv(out.parent / "inspection_events.csv", index=False)
+            report = dict(metadata=metadata, metrics=metrics, events=events, annotations=annotations)
+            (out.parent / "inspection_report.json").write_text(json.dumps(report, indent=2, allow_nan=False), encoding="utf-8")
+        return dict(metadata=metadata, frame_dataframe=df, event_dataframe=event_df, suspicious_gallery=gallery,
+                    output_video_path=str(out) if out else None, metrics=metrics)
 
-        frame_idx = 0
-        processed_count = 0
-        start_processing_time = time.time()
-
-        while cap.isOpened() and frame_idx < max_frames_to_read:
-            ret, frame_bgr = cap.read()
-            if not ret:
-                break
-
-            timestamp = frame_idx / fps
-            is_sampled = (frame_idx % self.sampling_interval == 0)
-
-            if is_sampled:
-                processed_count += 1
-                frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
-                pred = model.predict(frame_rgb)
-                score = pred.get("image_score", 0.0)
-                is_anomalous = bool(score >= self.decision_threshold)
-                anomaly_map = pred.get("anomaly_map")
-
-                frame_records.append({
-                    "frame_idx": frame_idx,
-                    "timestamp_s": round(timestamp, 2),
-                    "anomaly_score": score,
-                    "is_anomalous": is_anomalous,
-                    "predicted_label": pred.get("predicted_label", "REVIEW_REQUIRED")
-                })
-
-                if is_anomalous and anomaly_map is not None and len(suspicious_frames_gallery) < 10:
-                    heatmap = self.postprocessor.generate_heatmap(anomaly_map)
-                    overlay = self.postprocessor.generate_overlay(frame_rgb, heatmap)
-                    suspicious_frames_gallery.append({
-                        "frame_idx": frame_idx,
-                        "timestamp_s": round(timestamp, 2),
-                        "score": score,
-                        "overlay": overlay
-                    })
-
-                # Visual annotation for output video
-                if writer is not None:
-                    annotated_bgr = frame_bgr.copy()
-                    color = (0, 0, 255) if is_anomalous else (0, 255, 0)
-                    status_text = f"Frame {frame_idx} | Score: {score:.3f} | {'ALERT' if is_anomalous else 'NORMAL'}"
-                    cv2.putText(annotated_bgr, status_text, (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
-                    writer.write(annotated_bgr)
-            else:
-                if writer is not None:
-                    # Write frame with last known status indicator
-                    writer.write(frame_bgr)
-
-            frame_idx += 1
-
-        cap.release()
-        if writer is not None:
-            writer.release()
-
-        total_time = time.time() - start_processing_time
-        fps_throughput = processed_count / total_time if total_time > 0 else 0.0
-
-        # Temporal aggregation of anomalous frames into events
-        df_frames = pd.DataFrame(frame_records)
-        events = self._aggregate_events(df_frames, fps)
-        df_events = pd.DataFrame(events)
-
-        return {
-            "metadata": {
-                "total_frames": total_frames,
-                "processed_frames": processed_count,
-                "fps": round(fps, 2),
-                "duration_s": round(duration_s, 2),
-                "resolution": f"{orig_w}x{orig_h}",
-                "processing_time_s": round(total_time, 2),
-                "throughput_fps": round(fps_throughput, 1)
-            },
-            "frame_dataframe": df_frames,
-            "event_dataframe": df_events,
-            "suspicious_gallery": suspicious_frames_gallery,
-            "output_video_path": str(output_video_path) if output_video_path else None
-        }
-
-    def _aggregate_events(self, df_frames: pd.DataFrame, fps: float) -> List[Dict[str, Any]]:
-        """Groups nearby anomalous frames into unified defect events."""
+    def _aggregate_events(self, df_frames, fps):
         if df_frames.empty:
             return []
-
-        anomalous_frames = df_frames[df_frames["is_anomalous"] == True].copy()
-        if anomalous_frames.empty:
-            return []
-
-        events = []
-        current_event_frames = []
-
-        for _, row in anomalous_frames.iterrows():
-            f_idx = row["frame_idx"]
-            if not current_event_frames:
-                current_event_frames.append(row)
+        # First require a genuine consecutive run; isolated positives cannot qualify through gap merging.
+        runs, current = [], []
+        for _, row in df_frames.iterrows():
+            if bool(row["is_anomalous"]):
+                current.append(row)
             else:
-                prev_idx = current_event_frames[-1]["frame_idx"]
-                if (f_idx - prev_idx) <= (self.sampling_interval * self.merge_gap_frames):
-                    current_event_frames.append(row)
-                else:
-                    if len(current_event_frames) >= self.consecutive_frames:
-                        events.append(self._summarize_event(current_event_frames, fps))
-                    current_event_frames = [row]
+                if len(current) >= self.consecutive_frames:
+                    runs.append(current)
+                current = []
+        if len(current) >= self.consecutive_frames:
+            runs.append(current)
+        merged = []
+        for run in runs:
+            if merged and run[0]["frame_idx"] - merged[-1][-1]["frame_idx"] <= self.sampling_interval * (self.merge_gap_frames + 1):
+                merged[-1].extend(run)
+            else:
+                merged.append(run)
+        result = [self._summarize_event(run, fps) for run in merged]
+        return [event for event in result if event["duration_s"] >= self.min_event_duration_s]
 
-        if len(current_event_frames) >= self.consecutive_frames:
-            events.append(self._summarize_event(current_event_frames, fps))
-
-        return events
-
-    def _summarize_event(self, event_frames: List[pd.Series], fps: float) -> Dict[str, Any]:
-        """Summarizes a cluster of suspicious frames."""
-        start_f = event_frames[0]["frame_idx"]
-        end_f = event_frames[-1]["frame_idx"]
-        scores = [f["anomaly_score"] for f in event_frames]
-        return {
-            "event_id": f"EVT_{start_f}_{end_f}",
-            "start_time_s": round(start_f / fps, 2),
-            "end_time_s": round(end_f / fps, 2),
-            "duration_s": round((end_f - start_f + 1) / fps, 2),
-            "suspicious_frame_count": len(event_frames),
-            "peak_anomaly_score": round(float(np.max(scores)), 4),
-            "mean_anomaly_score": round(float(np.mean(scores)), 4)
-        }
+    def _summarize_event(self, frames, fps):
+        start, end = int(frames[0]["frame_idx"]), int(frames[-1]["frame_idx"])
+        scores = [float(frame["anomaly_score"]) for frame in frames]
+        return dict(event_id=f"EVT_{start}_{end}", start_time_s=start/fps, end_time_s=(end+self.sampling_interval)/fps,
+                    detected_time_s=float(frames[min(self.consecutive_frames, len(frames))-1]["frame_idx"])/fps,
+                    duration_s=(end-start+self.sampling_interval)/fps, suspicious_frame_count=len(frames),
+                    peak_anomaly_score=max(scores), mean_anomaly_score=float(np.mean(scores)))

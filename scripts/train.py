@@ -6,6 +6,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from visionguard.models.registry import ModelRegistry
 from visionguard.data.validation import DatasetValidator
+import visionguard.models.patchcore_model
+import visionguard.models.efficientad_model
 
 def main():
     parser = argparse.ArgumentParser(description="Train anomaly detection model on normal product images.")
@@ -14,17 +16,20 @@ def main():
     parser.add_argument("--category", type=str, default="bottle", help="Product category")
     parser.add_argument("--root", type=str, default="./datasets/mvtec_ad", help="Dataset root path")
     parser.add_argument("--checkpoints", type=str, default="./checkpoints", help="Checkpoints directory")
+    parser.add_argument("--coreset-ratio", type=float, default=None, help="Coreset sampling ratio for PatchCore (optional)")
     args = parser.parse_args()
 
     # 1. Validate dataset existence
-    val_res = DatasetValidator.validate_mvtec_ad(args.root, categories=[args.category])
-    cat_info = val_res.get("categories", {}).get(args.category)
-    if not cat_info or cat_info.get("train_good_count", 0) == 0:
-        print(f"Error: Dataset for category '{args.category}' is missing or empty at {args.root}/{args.category}/train/good.")
-        print("Please download MVTec AD and place the category files properly before training.")
-        sys.exit(1)
-
-    print(f"Starting training: Model={args.model.upper()}, Category={args.category}, Samples={cat_info['train_good_count']}")
+    if args.dataset == "mvtec_ad":
+        val_res = DatasetValidator.validate_mvtec_ad(args.root, categories=[args.category])
+        cat_info = val_res.get("categories", {}).get(args.category)
+        if not cat_info or cat_info.get("train_good_count", 0) == 0:
+            print(f"Error: Dataset for category '{args.category}' is missing or empty at {args.root}/{args.category}/train/good.")
+            print("Please download MVTec AD and place the category files properly before training.")
+            sys.exit(1)
+        print(f"Starting training: Model={args.model.upper()}, Category={args.category}, Samples={cat_info['train_good_count']}")
+    else:
+        print(f"Starting training: Model={args.model.upper()}, Dataset={args.dataset.upper()}, Category={args.category}")
     
     # 2. Get registered model
     model_cls = ModelRegistry.get(args.model)
@@ -32,8 +37,10 @@ def main():
 
     config = {
         "root": args.root,
+        "dataset": args.dataset,
         "category": args.category,
-        "checkpoint_dir": args.checkpoints
+        "checkpoint_dir": args.checkpoints,
+        "coreset_sampling_ratio": args.coreset_ratio
     }
 
     result = model.train(config)

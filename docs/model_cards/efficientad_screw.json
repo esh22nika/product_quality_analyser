@@ -1,0 +1,24 @@
+{
+  "architecture": "efficientad",
+  "category": "screw",
+  "intended_use": "Category-specific industrial visual anomaly inspection",
+  "checkpoint": "checkpoints\\public_efficientad\\screw\\model.ckpt",
+  "checkpoint_sha256": "03ad3fc32b538a4a1646ae86220727c017ed443b7df7a84acf5f572a0e200a76",
+  "provenance": {
+    "category": "screw",
+    "repo": "micguida1/mvtec-anomaly-checkpoints",
+    "revision": "a0d5049619c09cdd06e0fb22f82c906b53355d2f",
+    "filename": "EfficientAd/MVTecAD/screw/latest/weights/lightning/model.ckpt",
+    "bytes": 75199989,
+    "sha256": "03ad3fc32b538a4a1646ae86220727c017ed443b7df7a84acf5f572a0e200a76",
+    "url": "https://huggingface.co/micguida1/mvtec-anomaly-checkpoints/resolve/a0d5049619c09cdd06e0fb22f82c906b53355d2f/EfficientAd/MVTecAD/screw/latest/weights/lightning/model.ckpt"
+  },
+  "preprocessing": "Checkpoint model-specific resize (256x256) and normalization; EfficientAD normalization is internal.",
+  "score_semantics": "Raw scores for ranking; checkpoint-calibrated scores for fixed-threshold decisions; not probabilities.",
+  "local_evaluations": [],
+  "limitations": [
+    "No claim of transfer to unrelated conveyor footage.",
+    "Unknown/third-party training and validation selection prevents claims of a matched-training benchmark.",
+    "No real-video defect accuracy has been established for this model."
+  ]
+}

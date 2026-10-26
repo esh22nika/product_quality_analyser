@@ -1,0 +1,9 @@
+{
+  "category": "pill",
+  "repo": "micguida1/mvtec-anomaly-checkpoints",
+  "revision": "a0d5049619c09cdd06e0fb22f82c906b53355d2f",
+  "filename": "EfficientAd/MVTecAD/pill/latest/weights/lightning/model.ckpt",
+  "bytes": 75199989,
+  "sha256": "08a6c283a2ffce6a36a0627ab18195dce35cf0d6f32e1a26e4e08d7a17c4f31b",
+  "url": "https://huggingface.co/micguida1/mvtec-anomaly-checkpoints/resolve/a0d5049619c09cdd06e0fb22f82c906b53355d2f/EfficientAd/MVTecAD/pill/latest/weights/lightning/model.ckpt"
+}

@@ -1,0 +1,388 @@
+{
+  "architecture": "efficientad",
+  "category": "bottle",
+  "intended_use": "Category-specific industrial visual anomaly inspection",
+  "checkpoint": "checkpoints\\public_efficientad\\bottle\\model.ckpt",
+  "checkpoint_sha256": "2bdc012f06ef9ca107e7b9c878643e0ff6550941f0ff45f96e6b51f75ca62995",
+  "provenance": {
+    "category": "bottle",
+    "repo": "micguida1/mvtec-anomaly-checkpoints",
+    "revision": "a0d5049619c09cdd06e0fb22f82c906b53355d2f",
+    "filename": "EfficientAd/MVTecAD/bottle/latest/weights/lightning/model.ckpt",
+    "bytes": 75199925,
+    "sha256": "2bdc012f06ef9ca107e7b9c878643e0ff6550941f0ff45f96e6b51f75ca62995",
+    "url": "https://huggingface.co/micguida1/mvtec-anomaly-checkpoints/resolve/a0d5049619c09cdd06e0fb22f82c906b53355d2f/EfficientAd/MVTecAD/bottle/latest/weights/lightning/model.ckpt"
+  },
+  "preprocessing": "Checkpoint model-specific resize (256x256) and normalization; EfficientAD normalization is internal.",
+  "score_semantics": "Raw scores for ranking; checkpoint-calibrated scores for fixed-threshold decisions; not probabilities.",
+  "local_evaluations": [
+    {
+      "report": "reports\\verified_efficientad_mvtec_ad_bottle_2_blur.json",
+      "protocol": {
+        "name": "mvtec_ad",
+        "category": "bottle",
+        "root": "C:\\Users\\Eshan\\Downloads\\DL_Project\\mvtec_anomaly_detection",
+        "split": "deterministic balanced official-test subset",
+        "limit_per_class": 2,
+        "image_paths": [
+          "mvtec_anomaly_detection\\bottle\\test\\good\\000.png",
+          "mvtec_anomaly_detection\\bottle\\test\\good\\001.png",
+          "mvtec_anomaly_detection\\bottle\\test\\broken_large\\000.png",
+          "mvtec_anomaly_detection\\bottle\\test\\broken_large\\001.png"
+        ],
+        "sample_manifest_sha256": "14c1e2ef83fa03a6ca3311408d3f6e58b90e982c2613675ba0b973887fbf9e9c",
+        "pixel_evaluation_resolution": [
+          256,
+          256
+        ],
+        "corruption": "blur",
+        "threshold_selection": "fixed before evaluation; no test tuning",
+        "comparison_limitations": "Same inference samples and code; existing checkpoints may differ in training/validation protocol."
+      },
+      "metrics": {
+        "auroc": 1.0,
+        "average_precision": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "threshold": 0.5,
+        "confusion_matrix": [
+          [
+            2,
+            0
+          ],
+          [
+            0,
+            2
+          ]
+        ],
+        "sample_count": 4,
+        "pixel_auroc": 0.9912,
+        "pixel_average_precision": 0.8117,
+        "iou": 0.6473,
+        "dice": 0.7859,
+        "pixel_count": 262144,
+        "pixel_ap_sample_count": 262144,
+        "pixel_ap_sampling_seed": 42,
+        "aupro_0_3_approx": 0.9688198946915509,
+        "aupro_threshold_count": 64,
+        "aupro_protocol": "64 quantile thresholds, normalized partial PRO AUC at FPR <= 0.3",
+        "mean_inference_ms": 2398.0533499852754,
+        "median_inference_ms": 2386.3667499972507,
+        "elapsed_s": 10.18061460001627
+      },
+      "conditions": {
+        "name": "efficientad",
+        "device": "cpu",
+        "hardware": "Intel64 Family 6 Model 186 Stepping 2, GenuineIntel",
+        "dependencies": {
+          "torch": "2.10.0+cpu",
+          "torchvision": "0.25.0+cpu",
+          "anomalib": "2.7.0",
+          "lightning": "2.6.6"
+        },
+        "checkpoint": "C:\\Users\\Eshan\\Downloads\\DL_Project\\checkpoints\\public_efficientad\\bottle\\model.ckpt",
+        "torch_threads": 4,
+        "score_protocol": "raw ranking; checkpoint calibration for threshold decisions",
+        "training_provenance": "existing category checkpoint; third-party validation/test selection may be unknown"
+      }
+    },
+    {
+      "report": "reports\\verified_efficientad_mvtec_ad_bottle_2_brightness.json",
+      "protocol": {
+        "name": "mvtec_ad",
+        "category": "bottle",
+        "root": "C:\\Users\\Eshan\\Downloads\\DL_Project\\mvtec_anomaly_detection",
+        "split": "deterministic balanced official-test subset",
+        "limit_per_class": 2,
+        "image_paths": [
+          "mvtec_anomaly_detection\\bottle\\test\\good\\000.png",
+          "mvtec_anomaly_detection\\bottle\\test\\good\\001.png",
+          "mvtec_anomaly_detection\\bottle\\test\\broken_large\\000.png",
+          "mvtec_anomaly_detection\\bottle\\test\\broken_large\\001.png"
+        ],
+        "sample_manifest_sha256": "14c1e2ef83fa03a6ca3311408d3f6e58b90e982c2613675ba0b973887fbf9e9c",
+        "pixel_evaluation_resolution": [
+          256,
+          256
+        ],
+        "corruption": "brightness",
+        "threshold_selection": "fixed before evaluation; no test tuning",
+        "comparison_limitations": "Same inference samples and code; existing checkpoints may differ in training/validation protocol."
+      },
+      "metrics": {
+        "auroc": 0.5,
+        "average_precision": 0.75,
+        "precision": 0.5,
+        "recall": 1.0,
+        "f1_score": 0.6667,
+        "threshold": 0.5,
+        "confusion_matrix": [
+          [
+            0,
+            2
+          ],
+          [
+            0,
+            2
+          ]
+        ],
+        "sample_count": 4,
+        "pixel_auroc": 0.777,
+        "pixel_average_precision": 0.113,
+        "iou": 0.0887,
+        "dice": 0.163,
+        "pixel_count": 262144,
+        "pixel_ap_sample_count": 262144,
+        "pixel_ap_sampling_seed": 42,
+        "aupro_0_3_approx": 0.32203097190951446,
+        "aupro_threshold_count": 64,
+        "aupro_protocol": "64 quantile thresholds, normalized partial PRO AUC at FPR <= 0.3",
+        "mean_inference_ms": 2438.578700006474,
+        "median_inference_ms": 2433.014450012706,
+        "elapsed_s": 10.446901299990714
+      },
+      "conditions": {
+        "name": "efficientad",
+        "device": "cpu",
+        "hardware": "Intel64 Family 6 Model 186 Stepping 2, GenuineIntel",
+        "dependencies": {
+          "torch": "2.10.0+cpu",
+          "torchvision": "0.25.0+cpu",
+          "anomalib": "2.7.0",
+          "lightning": "2.6.6"
+        },
+        "checkpoint": "C:\\Users\\Eshan\\Downloads\\DL_Project\\checkpoints\\public_efficientad\\bottle\\model.ckpt",
+        "torch_threads": 4,
+        "score_protocol": "raw ranking; checkpoint calibration for threshold decisions",
+        "training_provenance": "existing category checkpoint; third-party validation/test selection may be unknown"
+      }
+    },
+    {
+      "report": "reports\\verified_efficientad_mvtec_ad_bottle_2_none.json",
+      "protocol": {
+        "name": "mvtec_ad",
+        "category": "bottle",
+        "root": "C:\\Users\\Eshan\\Downloads\\DL_Project\\mvtec_anomaly_detection",
+        "split": "deterministic balanced official-test subset",
+        "limit_per_class": 2,
+        "image_paths": [
+          "mvtec_anomaly_detection\\bottle\\test\\good\\000.png",
+          "mvtec_anomaly_detection\\bottle\\test\\good\\001.png",
+          "mvtec_anomaly_detection\\bottle\\test\\broken_large\\000.png",
+          "mvtec_anomaly_detection\\bottle\\test\\broken_large\\001.png"
+        ],
+        "sample_manifest_sha256": "14c1e2ef83fa03a6ca3311408d3f6e58b90e982c2613675ba0b973887fbf9e9c",
+        "pixel_evaluation_resolution": [
+          256,
+          256
+        ],
+        "corruption": "none",
+        "threshold_selection": "fixed before evaluation; no test tuning",
+        "comparison_limitations": "Same inference samples and code; existing checkpoints may differ in training/validation protocol."
+      },
+      "metrics": {
+        "auroc": 1.0,
+        "average_precision": 1.0,
+        "precision": 0.6667,
+        "recall": 1.0,
+        "f1_score": 0.8,
+        "threshold": 0.5,
+        "confusion_matrix": [
+          [
+            1,
+            1
+          ],
+          [
+            0,
+            2
+          ]
+        ],
+        "sample_count": 4,
+        "pixel_auroc": 0.9912,
+        "pixel_average_precision": 0.8131,
+        "iou": 0.6406,
+        "dice": 0.7809,
+        "pixel_count": 262144,
+        "pixel_ap_sample_count": 262144,
+        "pixel_ap_sampling_seed": 42,
+        "aupro_0_3_approx": 0.968853233759285,
+        "aupro_threshold_count": 64,
+        "aupro_protocol": "64 quantile thresholds, normalized partial PRO AUC at FPR <= 0.3",
+        "mean_inference_ms": 2407.1186499786563,
+        "median_inference_ms": 2423.5319499857724,
+        "elapsed_s": 10.095663699961733
+      },
+      "conditions": {
+        "name": "efficientad",
+        "device": "cpu",
+        "hardware": "Intel64 Family 6 Model 186 Stepping 2, GenuineIntel",
+        "dependencies": {
+          "torch": "2.10.0+cpu",
+          "torchvision": "0.25.0+cpu",
+          "anomalib": "2.7.0",
+          "lightning": "2.6.6"
+        },
+        "checkpoint": "C:\\Users\\Eshan\\Downloads\\DL_Project\\checkpoints\\public_efficientad\\bottle\\model.ckpt",
+        "torch_threads": 4,
+        "score_protocol": "raw ranking; checkpoint calibration for threshold decisions",
+        "training_provenance": "existing category checkpoint; third-party validation/test selection may be unknown"
+      }
+    },
+    {
+      "report": "reports\\verified_efficientad_mvtec_ad_bottle_5.json",
+      "protocol": {
+        "name": "mvtec_ad",
+        "category": "bottle",
+        "root": "C:\\Users\\Eshan\\Downloads\\DL_Project\\mvtec_anomaly_detection",
+        "split": "deterministic balanced official-test subset",
+        "limit_per_class": 5,
+        "image_paths": [
+          "mvtec_anomaly_detection\\bottle\\test\\good\\000.png",
+          "mvtec_anomaly_detection\\bottle\\test\\good\\001.png",
+          "mvtec_anomaly_detection\\bottle\\test\\good\\002.png",
+          "mvtec_anomaly_detection\\bottle\\test\\good\\003.png",
+          "mvtec_anomaly_detection\\bottle\\test\\good\\004.png",
+          "mvtec_anomaly_detection\\bottle\\test\\broken_large\\000.png",
+          "mvtec_anomaly_detection\\bottle\\test\\broken_large\\001.png",
+          "mvtec_anomaly_detection\\bottle\\test\\broken_large\\002.png",
+          "mvtec_anomaly_detection\\bottle\\test\\broken_large\\003.png",
+          "mvtec_anomaly_detection\\bottle\\test\\broken_large\\004.png"
+        ],
+        "sample_manifest_sha256": "0633f532abfb8684f77283c275ccc3296ee7280ce7257f6e87709520dce25cc4",
+        "pixel_evaluation_resolution": [
+          256,
+          256
+        ],
+        "threshold_selection": "fixed before evaluation; no test tuning",
+        "comparison_limitations": "Same inference samples and code; existing checkpoints may differ in training/validation protocol."
+      },
+      "metrics": {
+        "auroc": 1.0,
+        "average_precision": 1.0,
+        "precision": 0.8333,
+        "recall": 1.0,
+        "f1_score": 0.9091,
+        "threshold": 0.5,
+        "confusion_matrix": [
+          [
+            4,
+            1
+          ],
+          [
+            0,
+            5
+          ]
+        ],
+        "sample_count": 10,
+        "pixel_auroc": 0.9761,
+        "pixel_average_precision": 0.7386,
+        "iou": 0.639,
+        "dice": 0.7798,
+        "pixel_count": 655360,
+        "pixel_ap_sample_count": 500000,
+        "pixel_ap_sampling_seed": 42,
+        "mean_inference_ms": 2418.5724700044375,
+        "median_inference_ms": 2397.2659500141162,
+        "elapsed_s": 24.827490800002124
+      },
+      "conditions": {
+        "name": "efficientad",
+        "device": "cpu",
+        "hardware": "Intel64 Family 6 Model 186 Stepping 2, GenuineIntel",
+        "dependencies": {
+          "torch": "2.5.1",
+          "torchvision": "0.20.1",
+          "anomalib": "2.7.0",
+          "lightning": "2.6.6"
+        },
+        "checkpoint": "C:\\Users\\Eshan\\Downloads\\DL_Project\\checkpoints\\public_efficientad\\bottle\\model.ckpt",
+        "torch_threads": 4,
+        "score_protocol": "raw ranking; checkpoint calibration for threshold decisions",
+        "training_provenance": "existing category checkpoint; third-party validation/test selection may be unknown"
+      }
+    },
+    {
+      "report": "reports\\verified_efficientad_mvtec_ad_bottle_5_none.json",
+      "protocol": {
+        "name": "mvtec_ad",
+        "category": "bottle",
+        "root": "C:\\Users\\Eshan\\Downloads\\DL_Project\\mvtec_anomaly_detection",
+        "split": "deterministic balanced official-test subset",
+        "limit_per_class": 5,
+        "image_paths": [
+          "mvtec_anomaly_detection\\bottle\\test\\good\\000.png",
+          "mvtec_anomaly_detection\\bottle\\test\\good\\001.png",
+          "mvtec_anomaly_detection\\bottle\\test\\good\\002.png",
+          "mvtec_anomaly_detection\\bottle\\test\\good\\003.png",
+          "mvtec_anomaly_detection\\bottle\\test\\good\\004.png",
+          "mvtec_anomaly_detection\\bottle\\test\\broken_large\\000.png",
+          "mvtec_anomaly_detection\\bottle\\test\\broken_large\\001.png",
+          "mvtec_anomaly_detection\\bottle\\test\\broken_large\\002.png",
+          "mvtec_anomaly_detection\\bottle\\test\\broken_large\\003.png",
+          "mvtec_anomaly_detection\\bottle\\test\\broken_large\\004.png"
+        ],
+        "sample_manifest_sha256": "0633f532abfb8684f77283c275ccc3296ee7280ce7257f6e87709520dce25cc4",
+        "pixel_evaluation_resolution": [
+          256,
+          256
+        ],
+        "corruption": "none",
+        "threshold_selection": "fixed before evaluation; no test tuning",
+        "comparison_limitations": "Same inference samples and code; existing checkpoints may differ in training/validation protocol."
+      },
+      "metrics": {
+        "auroc": 1.0,
+        "average_precision": 1.0,
+        "precision": 0.8333,
+        "recall": 1.0,
+        "f1_score": 0.9091,
+        "threshold": 0.5,
+        "confusion_matrix": [
+          [
+            4,
+            1
+          ],
+          [
+            0,
+            5
+          ]
+        ],
+        "sample_count": 10,
+        "pixel_auroc": 0.9761,
+        "pixel_average_precision": 0.7386,
+        "iou": 0.639,
+        "dice": 0.7798,
+        "pixel_count": 655360,
+        "pixel_ap_sample_count": 500000,
+        "pixel_ap_sampling_seed": 42,
+        "aupro_0_3_approx": 0.9484732403315312,
+        "aupro_threshold_count": 64,
+        "aupro_protocol": "64 quantile thresholds, normalized partial PRO AUC at FPR <= 0.3",
+        "mean_inference_ms": 2415.4562900133897,
+        "median_inference_ms": 2387.2621500340756,
+        "elapsed_s": 25.251068399986252
+      },
+      "conditions": {
+        "name": "efficientad",
+        "device": "cpu",
+        "hardware": "Intel64 Family 6 Model 186 Stepping 2, GenuineIntel",
+        "dependencies": {
+          "torch": "2.10.0+cpu",
+          "torchvision": "0.25.0+cpu",
+          "anomalib": "2.7.0",
+          "lightning": "2.6.6"
+        },
+        "checkpoint": "C:\\Users\\Eshan\\Downloads\\DL_Project\\checkpoints\\public_efficientad\\bottle\\model.ckpt",
+        "torch_threads": 4,
+        "score_protocol": "raw ranking; checkpoint calibration for threshold decisions",
+        "training_provenance": "existing category checkpoint; third-party validation/test selection may be unknown"
+      }
+    }
+  ],
+  "limitations": [
+    "No claim of transfer to unrelated conveyor footage.",
+    "Unknown/third-party training and validation selection prevents claims of a matched-training benchmark.",
+    "No real-video defect accuracy has been established for this model."
+  ]
+}

@@ -1,32 +1,23 @@
-import os
+"""Run real image inference using an existing public benchmark sample."""
+import argparse
+import json
 import sys
 from pathlib import Path
-import cv2
-import numpy as np
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
-
-from visionguard.inference.image_inference import ImageInspectionPipeline
-from visionguard.inference.video_inference import VideoInspectionPipeline
-
-def main():
-    print("Running VisionGuard end-to-end demo...")
-    # Create synthetic test fixture for quick verification
-    test_img = np.zeros((256, 256, 3), dtype=np.uint8)
-    test_img[50:200, 50:200] = [180, 180, 180]
-    # Inject a surface defect
-    test_img[90:110, 90:120] = [30, 30, 220]
-
-    pipeline = ImageInspectionPipeline(model_name="patchcore", category="bottle")
-    res = pipeline.inspect(test_img)
-
-    print(f"Status: {res['success']}")
-    print(f"Model: {res['model_name']}")
-    print(f"Score: {res['image_score']}")
-    print(f"Decision: {res['predicted_label']}")
-    print(f"Inference latency: {res['inference_ms']} ms")
-    print(f"Estimated suspicious area: {res['region_analysis']['estimated_anomalous_area_percent']}%")
-    print("\nDemo completed successfully!")
-
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--image', default='mvtec_anomaly_detection/bottle/test/good/000.png')
+    parser.add_argument('--model', choices=['patchcore','efficientad'], default='efficientad')
+    parser.add_argument('--category', default='bottle')
+    args=parser.parse_args()
+    import torch
+    torch.set_num_threads(4)
+    from visionguard.inference.image_inference import ImageInspectionPipeline
+    from visionguard.storage.export import export_image_result
+    result=ImageInspectionPipeline(args.model,args.category).inspect(args.image)
+    if not result['success']:
+        raise RuntimeError(result['error'])
+    archive=export_image_result(result, Path('artifacts') / 'INSP_cli_demo')
+    print(json.dumps({k:result[k] for k in ['image_score','predicted_label','inference_ms','checkpoint']},indent=2))
+    print(archive)

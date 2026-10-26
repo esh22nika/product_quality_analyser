@@ -1,0 +1,9 @@
+{
+  "category": "carpet",
+  "repo": "micguida1/mvtec-anomaly-checkpoints",
+  "revision": "a0d5049619c09cdd06e0fb22f82c906b53355d2f",
+  "filename": "EfficientAd/MVTecAD/carpet/latest/weights/lightning/model.ckpt",
+  "bytes": 75199989,
+  "sha256": "5ca88b7dfc897a022fea50f8766027343e70ce0693faa123f7d41be0a9a677c2",
+  "url": "https://huggingface.co/micguida1/mvtec-anomaly-checkpoints/resolve/a0d5049619c09cdd06e0fb22f82c906b53355d2f/EfficientAd/MVTecAD/carpet/latest/weights/lightning/model.ckpt"
+}

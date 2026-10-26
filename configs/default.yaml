@@ -38,3 +38,12 @@ storage:
 
 logging:
   level: "INFO"
+
+video:
+  sampling_interval: 15
+  max_duration_s: 60
+  max_analysis_frames: 120
+  max_upload_bytes: 2147483648
+  max_dimension: 4096
+  output_max_width: 960
+  evaluation_without_annotations: qualitative_only

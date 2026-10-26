@@ -1,0 +1,9 @@
+{
+  "category": "hazelnut",
+  "repo": "micguida1/mvtec-anomaly-checkpoints",
+  "revision": "a0d5049619c09cdd06e0fb22f82c906b53355d2f",
+  "filename": "EfficientAd/MVTecAD/hazelnut/latest/weights/lightning/model.ckpt",
+  "bytes": 75199989,
+  "sha256": "674bf0ff96e893c22a40f953b6172dc9e372b2d4dc0dc5ab54b42b5bdddaae23",
+  "url": "https://huggingface.co/micguida1/mvtec-anomaly-checkpoints/resolve/a0d5049619c09cdd06e0fb22f82c906b53355d2f/EfficientAd/MVTecAD/hazelnut/latest/weights/lightning/model.ckpt"
+}
