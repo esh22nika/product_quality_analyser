@@ -22,6 +22,12 @@ feed precision/recall/F1 and confusion matrices. Likewise pixel ranking uses raw
 while segmentation uses calibrated maps. No per-image min/max normalization is used
 for metrics. Display colormaps are separate from ranking and calibration.
 
+The image UI defaults to relative display contrast (1st–99th percentile of the raw
+map) so narrow calibrated ranges do not appear uniformly green. This changes only
+heatmap/overlay colors. Scores, calibrated threshold masks and all metrics are
+unchanged. A fixed calibrated 0–1 color option remains available; relative red
+means a higher response within that image, not a defect probability.
+
 Pixel evaluation downsamples maps to 256 x 256 and masks with nearest-neighbor
 interpolation. Pixel AUROC, AP, IoU and Dice are reported, with normal-image false
 positives included. AP uses at most 500,000 deterministic pixels (seed 42); sample

@@ -45,3 +45,7 @@ reports/*
 
 # Project-local dependency environment
 .venv/
+
+# Original benchmark downloads (use the preparation scripts)
+/mvtec_anomaly_detection/
+/VisA_20220922.tar

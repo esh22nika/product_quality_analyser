@@ -8,6 +8,21 @@ def test_heatmap_generation():
     assert heatmap.shape == (100, 100, 3)
     assert heatmap.dtype == np.uint8
 
+
+def test_relative_colors_reveal_narrow_range_without_mutating_scores():
+    score_map = np.linspace(.497, .510, 10000).reshape(100, 100).astype(np.float32)
+    original = score_map.copy()
+    relative = AnomalyPostprocessor.generate_heatmap(score_map, scale="relative")
+    fixed = AnomalyPostprocessor.generate_heatmap(score_map)
+    assert np.unique(relative.reshape(-1, 3), axis=0).shape[0] > 100
+    assert np.unique(fixed.reshape(-1, 3), axis=0).shape[0] < 10
+    assert np.array_equal(score_map, original)
+
+
+def test_constant_relative_map_does_not_invent_structure():
+    colors = AnomalyPostprocessor.generate_heatmap(np.full((32, 32), .5, np.float32), scale="relative")
+    assert np.unique(colors.reshape(-1, 3), axis=0).shape[0] == 1
+
 def test_overlay_generation():
     orig = np.full((100, 100, 3), 128, dtype=np.uint8)
     heatmap = np.full((100, 100, 3), 255, dtype=np.uint8)

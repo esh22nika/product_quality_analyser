@@ -3,7 +3,35 @@
 The app requires no recordings, photos, or hand-built dataset. Prepared sources appear
 in the Video Inspection source selector after restarting the app.
 
-## Verified and integrated: Gigaset conveyor footage
+## Default: real glass bottles on a production line (MVTec bottle category)
+
+- Original: https://www.pexels.com/video/production-line-in-close-up-10416677/
+- Author: Thanh Văn. Pexels License: https://www.pexels.com/license/
+- Verified by decoding: 434 frames, 50 FPS, 1280×720, 8.68 seconds.
+- Real temporal video of brown glass bottles moving through a bottling line.
+- **Category match is not domain equivalence**: these bottles are capped and viewed
+  at an angle; MVTec's bottle images show open bottle tops. Existing pretrained
+  scores are qualitative, with no validated accuracy claim on this footage.
+- No defect labels or annotation timestamps. Quantitative defect metrics stay off.
+- Original and prepared SHA-256s, licence, author and changes are saved in manifest.
+
+```powershell
+.\.venv\Scripts\python.exe scripts/prepare_bottle_video.py
+```
+
+The downloader uses an identifying research User-Agent, preserves the original,
+checks decoding and re-encodes H.264 without changing frame rate or frame order.
+The Flask selector only offers prepared sources whose category is one of the
+15 MVTec AD categories. AeBAD and unrelated machinery footage are excluded.
+
+## Archived investigation: AeBAD-V (excluded from the application)
+
+AeBAD-V is a real, labeled blade-surface sequence, but blades are outside MVTec's
+categories and therefore do not satisfy this project's video-source requirement.
+The downloaded files and preparation script are retained as an investigation
+record. No blade model has been trained. They are not selectable in Flask.
+
+## Archived source: Gigaset conveyor footage (removed from Flask choices)
 
 - Source: https://commons.wikimedia.org/wiki/File:Gigaset_Cordless_Telephone_Production_VII_-_Pneumatic_Conveyor_Belt.webm
 - Original: 20.116-second real temporal recording, 1280 x 720, moving packaged telephones
@@ -47,10 +75,9 @@ accuracy can be reported from it. Original benchmark licences continue to apply.
 | Candidate | Temporal / annotation evidence | Access / integration decision |
 |---|---|---|
 | Iron-ore conveyor, DOI 10.17632/s25x2bnshz.1 | Publisher describes 19 original MP4s, 120 FPS; partially labeled extracted image splits, no complete video timestamp ground truth | CC BY 4.0 publisher page verified; live file APIs returned HTTP 403 in this environment. Not advertised as an automated working download. Public download page: https://data.mendeley.com/datasets/s25x2bnshz/1 |
-| AeBAD-V | Recorded rotating blades; official repository describes video-level/sample-level evaluation | CC BY 4.0 stated by authors; full data linked through Drive/Tian Yi. Full archive access, exact annotation alignment and contents not verified here; not automatically downloaded. https://github.com/zhangzilongc/MMR |
 | IPAD | Real/synthetic industrial temporal sequences, 16 devices, over six hours | Dataset linked from project page; page licence is not automatically the dataset licence. Redistribution terms and archive annotations not verified; no integration claim. https://ljf1113.github.io/IPAD_VAD/ |
 | ConveyorAD | Conference abstract reports 140 annotated conveyor videos | No publicly downloadable archive verified. Not integrated. https://cs2026.sciencesconf.org/703307/document |
 
-There is no labeled video benchmark integrated yet. This does not block video inference.
+AeBAD-V frame labels are preserved, but no blade detector has been trained or evaluated. Temporal accuracy is not reported using the chosen playback timestamps. Other unlabeled footage stays qualitative.
 Adding a new scene-specific EfficientAD detector would require normal training frames;
 CPU training may exceed two hours. No such training has been launched.

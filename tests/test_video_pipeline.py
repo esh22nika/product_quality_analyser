@@ -33,7 +33,12 @@ def test_video_outputs_heatmaps_events_and_no_fabricated_metrics(clip, tmp_path,
     monkeypatch.setattr('visionguard.inference.video_inference.ModelManager.get_model', lambda *a, **k: Detector())
     pipeline = VideoInspectionPipeline(sampling_interval=1, consecutive_frames=3)
     output = tmp_path / 'run/annotated.mp4'
-    result = pipeline.process_video(clip, output)
+    progress = []
+    result = pipeline.process_video(clip, output, on_progress=lambda fraction, message: progress.append((fraction, message)))
+    assert progress[0][0] == 0 and progress[-1][0] == 1
+    assert all(a[0] <= b[0] for a, b in zip(progress, progress[1:]))
+    assert sum('sampled frames ·' in message for _, message in progress) == 20
+    assert 'relative' in result['metadata']['heatmap_visualization']
     assert result['metadata']['processed_frames'] == 20
     assert len(result['event_dataframe']) == 1
     assert result['metrics']['frame_auroc'] is None

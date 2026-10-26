@@ -33,6 +33,8 @@ def create_image_tab():
                 decision_thresh = gr.Slider(0.0, 1.0, value=0.5, step=0.01, label="Decision Threshold")
                 pixel_thresh = gr.Slider(0.0, 1.0, value=0.5, step=0.01, label="Pixel Heatmap Threshold")
                 min_region_area = gr.Slider(10, 500, value=50, step=10, label="Min Suspicious Region Area (px)")
+                heatmap_scale = gr.Dropdown(choices=["relative", "calibrated"], value="relative",
+                    label="Heatmap colors: relative contrast or fixed calibrated 0–1")
                 
                 inspect_btn = gr.Button("Inspect Image", variant="primary")
                 clear_btn = gr.Button("Clear")
@@ -61,14 +63,16 @@ def create_image_tab():
 
                 with gr.Row():
                     orig_display = gr.Image(label="Original Image", interactive=False)
-                    heatmap_display = gr.Image(label="Anomaly Heatmap", interactive=False)
+                    heatmap_display = gr.Image(label="Anomaly Heatmap (display contrast)", interactive=False)
+                gr.Markdown("**Relative colors:** blue = lower and red = higher anomaly response within this image. "
+                            "Colors are not defect probabilities. Scores, the white mask and evaluation use the original calibrated values.")
 
                 with gr.Row():
                     overlay_display = gr.Image(label="Overlay with Bounding Boxes", interactive=False)
                     mask_display = gr.Image(label="Thresholded Suspicious Mask", interactive=False)
                 download_result = gr.File(label="Download images, anomaly maps and JSON report")
 
-        def run_inspection(img, cat, model_name, d_thresh, p_thresh, min_area):
+        def run_inspection(img, cat, model_name, d_thresh, p_thresh, min_area, color_scale="relative"):
             if img is None:
                 return (
                     "No Image Provided", 0.0, 0.0, 0.0,
@@ -81,7 +85,8 @@ def create_image_tab():
                 img,
                 decision_threshold=d_thresh,
                 pixel_threshold=p_thresh,
-                min_region_area=int(min_area)
+                min_region_area=int(min_area),
+                heatmap_scale=color_scale,
             )
 
             if not res["success"]:
@@ -108,6 +113,8 @@ def create_image_tab():
 
             warnings = res["quality"]["warnings"]
             warnings_text = "; ".join(warnings) if warnings else "Image quality checks passed."
+            lo, hi = res["heatmap_visualization"]["calibrated_pixel_range"]
+            warnings_text += f" Heatmap colors: {color_scale}. Actual calibrated pixel range: {lo:.5f}–{hi:.5f}."
 
             return (
                 res["predicted_label"],
@@ -125,7 +132,7 @@ def create_image_tab():
         inspect_btn.click(
             fn=run_inspection,
             concurrency_id="model_inference", concurrency_limit=1,
-            inputs=[image_input, category_dropdown, model_dropdown, decision_thresh, pixel_thresh, min_region_area],
+            inputs=[image_input, category_dropdown, model_dropdown, decision_thresh, pixel_thresh, min_region_area, heatmap_scale],
             outputs=[
                 status_badge, score_box, latency_box, area_box,
                 warnings_box, orig_display, heatmap_display, overlay_display, mask_display, download_result

@@ -32,7 +32,8 @@ class ImageInspectionPipeline:
         image_input: str | Path | np.ndarray,
         decision_threshold: float = 0.5,
         pixel_threshold: float = 0.5,
-        min_region_area: int = 50
+        min_region_area: int = 50,
+        heatmap_scale: str = "relative",
     ) -> Dict[str, Any]:
         """Runs validation, quality checks, model prediction, and heatmap generation."""
         # 1. Load and validate input
@@ -62,7 +63,8 @@ class ImageInspectionPipeline:
         anomaly_map = pred["anomaly_map"]
 
         # 4. Postprocessing
-        heatmap_rgb = self.postprocessor.generate_heatmap(anomaly_map)
+        display_map = pred.get("raw_anomaly_map", anomaly_map) if heatmap_scale == "relative" else anomaly_map
+        heatmap_rgb = self.postprocessor.generate_heatmap(display_map, scale=heatmap_scale)
         overlay_rgb = self.postprocessor.generate_overlay(rgb_np, heatmap_rgb)
         mask = self.postprocessor.apply_threshold(anomaly_map, threshold=pixel_threshold)
         region_analysis = self.postprocessor.analyze_regions(
@@ -78,6 +80,9 @@ class ImageInspectionPipeline:
             "raw_score": pred.get("raw_score", pred["image_score"]),
             "checkpoint": getattr(model, "checkpoint_path", None),
             "heatmap": heatmap_rgb,
+            "heatmap_visualization": {"scale": heatmap_scale, "relative_percentiles": [1, 99] if heatmap_scale == "relative" else None,
+                                      "calibrated_pixel_range": [float(anomaly_map.min()), float(anomaly_map.max())],
+                                      "colors_are_defect_probabilities": False},
             "overlay": overlay_rgb,
             "annotated_overlay": bbox_overlay,
             "thresholded_mask": mask,

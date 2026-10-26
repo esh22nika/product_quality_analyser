@@ -28,7 +28,12 @@ class VideoInspectionPipeline:
         self.roi, self.max_analysis_frames = roi, int(max_analysis_frames)
         self.postprocessor = AnomalyPostprocessor()
 
-    def process_video(self, video_path, output_video_path=None, max_duration_s=60.0, provenance=None, annotations=None):
+    def process_video(self, video_path, output_video_path=None, max_duration_s=60.0, provenance=None, annotations=None, on_progress=None):
+        def report(fraction, message):
+            if on_progress is not None:
+                on_progress(fraction, message)
+
+        report(0, "Opening video…")
         video_path = Path(video_path)
         if not video_path.is_file():
             raise FileNotFoundError(video_path)
@@ -58,6 +63,7 @@ class VideoInspectionPipeline:
             x, y, rw, rh = roi
             if x < 0 or y < 0 or min(rw, rh) <= 0 or x + rw > width or y + rh > height:
                 raise ValueError("ROI is outside the source frame")
+            report(0.02, f"Loading {self.model_name} / {self.category} checkpoint…")
             model = ModelManager.get_model(self.model_name, self.category, device=self.device)
             model.threshold = self.decision_threshold
             if out:
@@ -69,6 +75,8 @@ class VideoInspectionPipeline:
                     raise RuntimeError("MP4 encoder unavailable. Install FFmpeg-enabled OpenCV.")
             frames_read = 0
             limit = int(fps * min(max_duration_s, limits.get("video.max_duration_s", 60)))
+            expected = min(self.max_analysis_frames, math.ceil(min(total, limit) / self.sampling_interval)) if total > 0 else self.max_analysis_frames
+            report(0.05, f"Analyzing up to {expected} sampled frames on {getattr(model, 'device', self.device)}. CPU inference can take several seconds per frame.")
             while frames_read < limit and len(records) < self.max_analysis_frames:
                 ok, bgr = cap.read()
                 if not ok:
@@ -89,7 +97,7 @@ class VideoInspectionPipeline:
                     records.append(dict(frame_idx=index, timestamp_s=index / fps, anomaly_score=score,
                                         raw_score=float(pred.get("raw_score", score)), is_anomalous=suspicious,
                                         predicted_label=pred["predicted_label"]))
-                    heatmap = self.postprocessor.generate_heatmap(pred["anomaly_map"])
+                    heatmap = self.postprocessor.generate_heatmap(pred.get("raw_anomaly_map", pred["anomaly_map"]), scale="relative")
                     overlay = self.postprocessor.generate_overlay(crop, heatmap)
                     rgb[y:y+rh, x:x+rw] = overlay
                     bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
@@ -105,8 +113,14 @@ class VideoInspectionPipeline:
                     if len(gallery) < 12:
                         thumb = cv2.resize(rgb, (min(width, 480), max(1, int(height * min(width, 480) / width))))
                         gallery.append(dict(frame_idx=index, timestamp_s=index/fps, score=score, overlay=thumb))
+                    report(0.05 + 0.8 * len(records) / max(1, expected),
+                           f"Analyzed {len(records)}/{expected} sampled frames · video {index/fps:.1f}s · score {score:.3f}")
                 mode = "SYNTHETIC | " if (provenance or {}).get("sequence_type") == "synthetic_image_sequence" else ""
-                cv2.putText(bgr, mode + text, (10, min(height-5, 28)), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 1)
+                # Keep the synthetic-source banner readable at the top of the frame.
+                caption = mode + text
+                font_scale = min(0.45, max(0.2, (width - 20) / max(1, len(caption) * 10)))
+                cv2.rectangle(bgr, (0, max(0, height-30)), (width, height), (15, 20, 26), -1)
+                cv2.putText(bgr, caption, (10, max(12, height-10)), cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, 1)
                 if writer:
                     writer.write(cv2.resize(bgr, (output_width, output_height)))
             if not records:
@@ -126,6 +140,7 @@ class VideoInspectionPipeline:
         encoding_started = time.perf_counter()
         if out:
             from visionguard.inference.video_encoding import browser_encode
+            report(0.9, "Encoding browser-playable video…")
             browser_encode(out)
         df = pd.DataFrame(records, columns=FRAME_COLUMNS)
         events = self._aggregate_events(df, fps)
@@ -160,12 +175,14 @@ class VideoInspectionPipeline:
                         checkpoint=getattr(model, "checkpoint_path", None), device=getattr(model, "device", self.device),
                         output_codec="h264/yuv420p", encoding_time_s=time.perf_counter()-encoding_started,
                         saved_map_resolution=[256, 256],
+                        heatmap_visualization="relative raw-map contrast per frame; colors are not defect probabilities; scores and events use calibrated values",
                         unsampled_frames="No prediction; marked NOT ANALYZED", provenance=origin)
         if out:
             df.to_csv(out.parent / "frame_scores.csv", index=False)
             event_df.to_csv(out.parent / "inspection_events.csv", index=False)
-            report = dict(metadata=metadata, metrics=metrics, events=events, annotations=annotations)
-            (out.parent / "inspection_report.json").write_text(json.dumps(report, indent=2, allow_nan=False), encoding="utf-8")
+            inspection_report = dict(metadata=metadata, metrics=metrics, events=events, annotations=annotations)
+            (out.parent / "inspection_report.json").write_text(json.dumps(inspection_report, indent=2, allow_nan=False), encoding="utf-8")
+        report(1, f"Completed: {len(records)} sampled frames; {len(events)} inspection events.")
         return dict(metadata=metadata, frame_dataframe=df, event_dataframe=event_df, suspicious_gallery=gallery,
                     output_video_path=str(out) if out else None, metrics=metrics)
 

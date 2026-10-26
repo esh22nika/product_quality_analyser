@@ -7,9 +7,24 @@ class AnomalyPostprocessor:
     """Generates heatmaps, overlays, thresholded masks, and connected-region metrics."""
 
     @staticmethod
-    def generate_heatmap(anomaly_map: np.ndarray, colormap: int = cv2.COLORMAP_JET) -> np.ndarray:
-        """Converts normalized float anomaly map (0..1) into RGB heatmap."""
-        norm_map = np.clip(anomaly_map, 0.0, 1.0)
+    def generate_heatmap(anomaly_map: np.ndarray, colormap: int = cv2.COLORMAP_JET, scale: str = "calibrated") -> np.ndarray:
+        """Render fixed calibrated values or explicitly relative display contrast.
+
+        Relative scaling changes colors only; it must never feed scores, masks or metrics.
+        Constant maps stay at the low end instead of manufacturing a hotspot.
+        """
+        values = np.asarray(anomaly_map, dtype=np.float32)
+        if values.ndim != 2 or not np.isfinite(values).all():
+            raise ValueError("A heatmap requires a finite 2D score map")
+        if scale == "relative":
+            low, high = np.percentile(values, [1, 99])
+            if high - low <= 1e-12:
+                low, high = float(values.min()), float(values.max())
+            norm_map = np.clip((values - low) / (high - low), 0, 1) if high - low > 1e-12 else np.zeros_like(values)
+        elif scale == "calibrated":
+            norm_map = np.clip(values, 0.0, 1.0)
+        else:
+            raise ValueError("Heatmap scale must be relative or calibrated")
         uint8_map = (norm_map * 255.0).astype(np.uint8)
         heatmap_bgr = cv2.applyColorMap(uint8_map, colormap)
         return cv2.cvtColor(heatmap_bgr, cv2.COLOR_BGR2RGB)

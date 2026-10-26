@@ -1,17 +1,28 @@
 # VisionGuard: image and video industrial anomaly inspection
 
-Local PyTorch/Anomalib application with Gradio image, batch, video, dataset,
-evaluation and history tabs. PatchCore and EfficientAD use real trained category
+Local PyTorch/Anomalib application with a light Flask workspace for image, batch,
+video, datasets, evaluation and history. PatchCore and EfficientAD use real trained category
 weights and return actual anomaly maps. No external paid inference API is used.
 
 ## Start the prepared project
 
 ```powershell
-.\.venv\Scripts\python.exe app.py
+.\.venv\Scripts\python.exe flask_app.py
 ```
 
-Open http://127.0.0.1:7860. If using a pre-existing validated environment, `python
-app.py` also starts the app, but read [environment compatibility](docs/ENVIRONMENT.md).
+Open http://127.0.0.1:5000. The default video screen previews **real glass bottles
+on a production line**, matching the MVTec `bottle` object category. This unlabeled
+clip has a different camera view from MVTec and is qualitative only; existing
+weights are not validated defect detectors for it. The synthetic MVTec bottle
+sequence remains available for an image-domain demonstration. Upload MP4/AVI/MOV;
+source previews and inspection exports use browser-playable H.264. Jobs run in the
+background with progress and errors beside the action button. Reloading the page
+reconnects to an active job while this server is running. Use **Load last result**
+to reopen a completed video after a server restart. Click a chart point or sampled
+frame to pause and seek the inspected video. No new training is required.
+
+The original Gradio interface remains available with `.\.venv\Scripts\python.exe app.py`
+at port 7860. Read [environment compatibility](docs/ENVIRONMENT.md) before changing runtimes.
 Weights load on demand; available architectures are not advertised as already loaded.
 
 ## Installation
